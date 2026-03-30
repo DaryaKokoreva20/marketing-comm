@@ -4,9 +4,11 @@ from datetime import datetime
 from uuid import uuid4
 from app.constants.model import (
     AVAILABLE_CHANNELS,
-    AVAILABLE_SCENARIOS,
-    REQUIRED_TRAIN_COLUMNS,
-    REQUIRED_PREDICT_COLUMNS,
+    AVAILABLE_SCENARIOS
+)
+from app.utils.validation import (
+    validate_train_dataframe,
+    validate_predict_dataframe,
 )
 
 import pandas as pd
@@ -45,31 +47,6 @@ def load_dataframe(file_path: Path) -> pd.DataFrame:
         return pd.read_excel(file_path)
 
     raise ValueError("Неподдерживаемый формат файла.")
-
-
-def validate_train_dataframe(df: pd.DataFrame) -> None:
-    missing_columns = REQUIRED_TRAIN_COLUMNS - set(df.columns)
-    if missing_columns:
-        raise ValueError(
-            f"В обучающем файле отсутствуют обязательные колонки: {', '.join(sorted(missing_columns))}"
-        )
-
-    if df.empty:
-        raise ValueError("Обучающий файл пуст.")
-
-    if not df["target"].isin([0, 1]).all():
-        raise ValueError("Колонка target должна содержать только 0 и 1.")
-
-
-def validate_predict_dataframe(df: pd.DataFrame) -> None:
-    missing_columns = REQUIRED_PREDICT_COLUMNS - set(df.columns)
-    if missing_columns:
-        raise ValueError(
-            f"В файле для прогнозирования отсутствуют обязательные колонки: {', '.join(sorted(missing_columns))}"
-        )
-
-    if df.empty:
-        raise ValueError("Файл для прогнозирования пуст.")
 
 
 def save_uploaded_file(upload_file, destination: Path) -> None:
