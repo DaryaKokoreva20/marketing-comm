@@ -10,6 +10,10 @@ from app.utils.validation import (
     validate_train_dataframe,
     validate_predict_dataframe,
 )
+from app.utils.preprocessing import (
+    prepare_training_dataframe,
+    prepare_prediction_dataframe,
+)
 
 import pandas as pd
 
@@ -63,12 +67,14 @@ def train_model_from_file(upload_file) -> dict:
     df = load_dataframe(file_path)
     validate_train_dataframe(df)
 
+    X, y = prepare_training_dataframe(df)
+
     metadata = {
         "trained": True,
         "algorithm": "Logistic Regression",
         "trainedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "rowsCount": int(len(df)),
-        "featuresCount": int(len(df.columns) - 1),
+        "featuresCount": int(len(X.columns)),
         "metrics": {
             "accuracy": 0.81,
             "precision": 0.77,
@@ -163,6 +169,7 @@ def predict_from_file(upload_file) -> dict:
                 expanded_rows.append(new_row)
 
     result_df = pd.DataFrame(expanded_rows)
+    result_df = prepare_prediction_dataframe(result_df)
 
     result_df["predicted_probability"] = result_df.apply(calculate_probability_stub, axis=1)
     result_df["predicted_class"] = (result_df["predicted_probability"] >= 0.5).astype(int)
