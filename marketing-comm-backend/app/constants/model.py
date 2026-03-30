@@ -1,0 +1,63 @@
+AVAILABLE_CHANNELS = [
+    "email",
+    "sms",
+    "call",
+    "messenger",
+]
+
+AVAILABLE_SCENARIOS = [
+    "promo",
+    "cross_sell",
+    "reactivation",
+    "onboarding",
+    "reminder",
+    "loyalty",
+    "seasonal",
+]
+
+REQUIRED_TRAIN_COLUMNS = {
+    "client_type",
+    "tenure_days",
+    "avg_order_value",
+    "order_frequency",
+    "total_orders",
+    "recency_days",
+    "repeat_purchase_propensity",
+    "industry",
+    "channel_type",
+    "scenario_type",
+    "engagement_score",
+    "prev_response_rate",
+    "time_trigger",
+    "prev_comm_count_channel",
+    "prev_comm_response_rate_channel",
+    "last_comm_days_channel",
+    "prev_comm_count_scenario",
+    "prev_comm_response_rate_scenario",
+    "promo_sensitivity",
+    "b2c_age",
+    "comm_time",
+    "target",
+}
+
+REQUIRED_PREDICT_COLUMNS = {
+    "client_type",
+    "tenure_days",
+    "avg_order_value",
+    "order_frequency",
+    "total_orders",
+    "recency_days",
+    "repeat_purchase_propensity",
+    "industry",
+    "engagement_score",
+    "prev_response_rate",
+    "time_trigger",
+    "prev_comm_count_channel",
+    "prev_comm_response_rate_channel",
+    "last_comm_days_channel",
+    "prev_comm_count_scenario",
+    "prev_comm_response_rate_scenario",
+    "promo_sensitivity",
+    "b2c_age",
+    "comm_time",
+}
