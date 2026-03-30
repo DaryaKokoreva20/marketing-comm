@@ -59,3 +59,23 @@ REQUIRED_PREDICT_COLUMNS = {
     "b2c_age",
     "comm_time",
 }
+
+NUMERIC_COLUMNS = [
+    "tenure_days",
+    "avg_order_value",
+    "order_frequency",
+    "total_orders",
+    "recency_days",
+    "repeat_purchase_propensity",
+    "prev_response_rate",
+    "prev_comm_count_channel",
+    "prev_comm_response_rate_channel",
+    "last_comm_days_channel",
+    "prev_comm_count_scenario",
+    "prev_comm_response_rate_scenario",
+    "promo_sensitivity",
+    "b2c_age",
+    "time_trigger",
+]
+
+TRAIN_TARGET_COLUMN = "target"
