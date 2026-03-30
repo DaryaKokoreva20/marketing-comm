@@ -146,13 +146,13 @@ def validate_scenario_type_column(df: pd.DataFrame) -> None:
 
 
 def validate_industry_column(df: pd.DataFrame) -> None:
-    series = df["industry"]
+    series = df["industry_category"]
 
     if series.isnull().any():
-        raise ValueError("Колонка industry содержит пустые значения.")
+        raise ValueError("Колонка industry_category содержит пустые значения.")
 
     if (series.astype(str).str.strip() == "").any():
-        raise ValueError("Колонка industry содержит пустые строки.")
+        raise ValueError("Колонка industry_category содержит пустые строки.")
 
 
 def validate_b2c_age_column(df: pd.DataFrame) -> None:

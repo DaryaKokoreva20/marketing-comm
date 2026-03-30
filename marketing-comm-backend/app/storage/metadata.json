@@ -1,8 +1,14 @@
 {
-  "trained": false,
-  "algorithm": null,
-  "trainedAt": null,
-  "rowsCount": null,
-  "featuresCount": null,
-  "metrics": null
+  "trained": true,
+  "algorithm": "Logistic Regression",
+  "trainedAt": "2026-03-30 15:22:48",
+  "rowsCount": 2000,
+  "featuresCount": 20,
+  "metrics": {
+    "accuracy": 0.745,
+    "precision": 0.5714,
+    "recall": 0.1509,
+    "f1": 0.2388,
+    "rocAuc": 0.654
+  }
 }

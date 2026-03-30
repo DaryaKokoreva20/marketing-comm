@@ -6,6 +6,10 @@ from app.constants.model import (
     AVAILABLE_CHANNELS,
     AVAILABLE_SCENARIOS
 )
+from app.services.ml import (
+    train_logistic_regression_model,
+    predict_probabilities,
+)
 from app.utils.validation import (
     validate_train_dataframe,
     validate_predict_dataframe,
@@ -68,20 +72,15 @@ def train_model_from_file(upload_file) -> dict:
     validate_train_dataframe(df)
 
     X, y = prepare_training_dataframe(df)
+    training_result = train_logistic_regression_model(X, y)
 
     metadata = {
         "trained": True,
-        "algorithm": "Logistic Regression",
+        "algorithm": training_result["algorithm"],
         "trainedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "rowsCount": int(len(df)),
         "featuresCount": int(len(X.columns)),
-        "metrics": {
-            "accuracy": 0.81,
-            "precision": 0.77,
-            "recall": 0.73,
-            "f1": 0.75,
-            "rocAuc": 0.84
-        }
+        "metrics": training_result["metrics"]
     }
 
     write_metadata(metadata)
@@ -90,49 +89,6 @@ def train_model_from_file(upload_file) -> dict:
 
 def get_model_status() -> dict:
     return read_metadata()
-
-
-def calculate_probability_stub(row: pd.Series) -> float:
-    probability = 0.2
-
-    if row["channel_type"] == "email":
-        probability += 0.08
-    elif row["channel_type"] == "messenger":
-        probability += 0.06
-    elif row["channel_type"] == "sms":
-        probability += 0.04
-    elif row["channel_type"] == "call":
-        probability += 0.02
-
-    if row["scenario_type"] == "promo":
-        probability += 0.10
-    elif row["scenario_type"] == "loyalty":
-        probability += 0.08
-    elif row["scenario_type"] == "reminder":
-        probability += 0.06
-    elif row["scenario_type"] == "cross_sell":
-        probability += 0.05
-    elif row["scenario_type"] == "seasonal":
-        probability += 0.04
-    elif row["scenario_type"] == "reactivation":
-        probability += 0.03
-    elif row["scenario_type"] == "onboarding":
-        probability += 0.02
-
-    probability += min(float(row["engagement_score"]) * 0.15, 0.15)
-    probability += min(float(row["prev_response_rate"]) * 0.20, 0.20)
-    probability += min(float(row["promo_sensitivity"]) * 0.10, 0.10)
-    probability += min(float(row["repeat_purchase_propensity"]) * 0.10, 0.10)
-
-    recency_penalty = min(float(row["recency_days"]) / 1000, 0.15)
-    probability -= recency_penalty
-
-    if probability < 0.01:
-        probability = 0.01
-    if probability > 0.99:
-        probability = 0.99
-
-    return round(probability, 4)
 
 
 def predict_from_file(upload_file) -> dict:
@@ -169,9 +125,10 @@ def predict_from_file(upload_file) -> dict:
                 expanded_rows.append(new_row)
 
     result_df = pd.DataFrame(expanded_rows)
-    result_df = prepare_prediction_dataframe(result_df)
 
-    result_df["predicted_probability"] = result_df.apply(calculate_probability_stub, axis=1)
+    prediction_features_df = prepare_prediction_dataframe(result_df)
+
+    result_df["predicted_probability"] = predict_probabilities(prediction_features_df)
     result_df["predicted_class"] = (result_df["predicted_probability"] >= 0.5).astype(int)
 
     result_df = result_df.sort_values(
