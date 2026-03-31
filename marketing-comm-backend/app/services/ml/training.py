@@ -8,15 +8,19 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 
-def build_logistic_regression_pipeline(class_weight=None) -> Pipeline:
-    numeric_transformer = Pipeline(
-        steps=[
-            ("imputer", SimpleImputer(strategy="median")),
-        ]
-    )
+def build_logistic_regression_pipeline(class_weight=None, use_scaler=False) -> Pipeline:
+    numeric_steps = [
+        ("imputer", SimpleImputer(strategy="median")),
+    ]
+
+    if use_scaler:
+        numeric_steps.append(("scaler", StandardScaler()))
+
+    numeric_transformer = Pipeline(steps=numeric_steps)
+
     categorical_transformer = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="most_frequent")),
@@ -88,8 +92,12 @@ def train_single_logistic_regression_model(
     y_train: pd.Series,
     y_test: pd.Series,
     class_weight=None,
+    use_scaler=False,
 ) -> dict:
-    pipeline = build_logistic_regression_pipeline(class_weight=class_weight)
+    pipeline = build_logistic_regression_pipeline(
+        class_weight=class_weight,
+        use_scaler=use_scaler,
+    )
 
     pipeline.fit(X_train, y_train)
 
@@ -100,6 +108,7 @@ def train_single_logistic_regression_model(
         "pipeline": pipeline,
         "algorithm": "Logistic Regression",
         "classWeight": class_weight,
+        "useScaler": use_scaler,
         "threshold": best_threshold,
         "metrics": best_metrics,
     }
@@ -135,18 +144,24 @@ def train_logistic_regression_model(X: pd.DataFrame, y: pd.Series) -> dict:
 
     candidate_results = [
         train_single_logistic_regression_model(
-            X_train,
-            X_test,
-            y_train,
-            y_test,
+            X_train, X_test, y_train, y_test,
             class_weight=None,
+            use_scaler=False,
         ),
         train_single_logistic_regression_model(
-            X_train,
-            X_test,
-            y_train,
-            y_test,
+            X_train, X_test, y_train, y_test,
+            class_weight=None,
+            use_scaler=True,
+        ),
+        train_single_logistic_regression_model(
+            X_train, X_test, y_train, y_test,
             class_weight="balanced",
+            use_scaler=False,
+        ),
+        train_single_logistic_regression_model(
+            X_train, X_test, y_train, y_test,
+            class_weight="balanced",
+            use_scaler=True,
         ),
     ]
 
@@ -163,6 +178,7 @@ def train_logistic_regression_model(X: pd.DataFrame, y: pd.Series) -> dict:
         "metrics": best_result["metrics"],
         "threshold": best_result["threshold"],
         "classWeight": best_result["classWeight"],
+        "useScaler": best_result["useScaler"],
     }
 
 

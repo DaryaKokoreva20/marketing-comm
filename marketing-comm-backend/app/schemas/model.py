@@ -18,6 +18,7 @@ class ModelStatusDataSchema(BaseModel):
     featuresCount: Optional[int] = None
     threshold: Optional[float] = None
     classWeight: Optional[str] = None
+    useScaler: Optional[bool] = None
     metrics: Optional[MetricsSchema] = None
 
 

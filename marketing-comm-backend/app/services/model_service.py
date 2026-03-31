@@ -82,6 +82,7 @@ def train_model_from_file(upload_file) -> dict:
         "featuresCount": int(len(X.columns)),
         "threshold": training_result["threshold"],
         "classWeight": training_result["classWeight"],
+        "useScaler": training_result["useScaler"],
         "metrics": training_result["metrics"],
     }
 
