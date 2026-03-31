@@ -7,6 +7,7 @@ MODELS_DIR = STORAGE_DIR / "models"
 MODEL_PATH = MODELS_DIR / "logistic_regression_pipeline.joblib"
 
 THRESHOLD_CANDIDATES = [0.30, 0.35, 0.40, 0.45, 0.50, 0.55]
+MIN_PRECISION = 0.4
 
 NUMERIC_FEATURES = [
     "tenure_days",

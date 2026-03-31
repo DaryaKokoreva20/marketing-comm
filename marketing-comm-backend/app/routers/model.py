@@ -13,6 +13,8 @@ from app.services.model_service import (
     get_prediction_file_path
 )
 
+import traceback
+
 router = APIRouter(prefix="/api/model", tags=["model"])
 
 
@@ -36,8 +38,9 @@ def train_model(file: UploadFile = File(...)):
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception:
-        raise HTTPException(status_code=500, detail="Внутренняя ошибка при обучении модели.")
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/predict", response_model=PredictResponseSchema)

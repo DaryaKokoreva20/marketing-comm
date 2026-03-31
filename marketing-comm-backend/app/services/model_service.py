@@ -81,11 +81,13 @@ def train_model_from_file(upload_file) -> dict:
         "rowsCount": int(len(df)),
         "featuresCount": int(len(X.columns)),
         "threshold": training_result["threshold"],
+        "classWeight": training_result["classWeight"],
         "metrics": training_result["metrics"],
     }
 
     write_metadata(metadata)
     return metadata
+
 
 def get_model_status() -> dict:
     return read_metadata()

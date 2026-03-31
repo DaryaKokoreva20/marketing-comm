@@ -1,15 +1,16 @@
 {
   "trained": true,
   "algorithm": "Logistic Regression",
-  "trainedAt": "2026-03-31 14:26:28",
+  "trainedAt": "2026-03-31 14:56:47",
   "rowsCount": 2000,
   "featuresCount": 20,
-  "threshold": 0.35,
+  "threshold": 0.4,
+  "classWeight": "balanced",
   "metrics": {
-    "accuracy": 0.71,
-    "precision": 0.4375,
-    "recall": 0.3302,
-    "f1": 0.3763,
-    "rocAuc": 0.654
+    "accuracy": 0.5375,
+    "precision": 0.3463,
+    "recall": 0.8396,
+    "f1": 0.4904,
+    "rocAuc": 0.6598
   }
 }
