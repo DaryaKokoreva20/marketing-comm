@@ -80,12 +80,12 @@ def train_model_from_file(upload_file) -> dict:
         "trainedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "rowsCount": int(len(df)),
         "featuresCount": int(len(X.columns)),
-        "metrics": training_result["metrics"]
+        "threshold": training_result["threshold"],
+        "metrics": training_result["metrics"],
     }
 
     write_metadata(metadata)
     return metadata
-
 
 def get_model_status() -> dict:
     return read_metadata()
@@ -123,13 +123,19 @@ def predict_from_file(upload_file) -> dict:
                 new_row["channel_type"] = channel
                 new_row["scenario_type"] = scenario
                 expanded_rows.append(new_row)
-
+    
     result_df = pd.DataFrame(expanded_rows)
-
     prediction_features_df = prepare_prediction_dataframe(result_df)
 
     result_df["predicted_probability"] = predict_probabilities(prediction_features_df)
-    result_df["predicted_class"] = (result_df["predicted_probability"] >= 0.5).astype(int)
+
+    threshold = metadata.get("threshold")
+    if threshold is None:
+        threshold = 0.5
+
+    result_df["predicted_class"] = (
+        result_df["predicted_probability"] >= threshold
+    ).astype(int)
 
     result_df = result_df.sort_values(
         by=["client_row_id", "predicted_probability"],

@@ -1,7 +1,7 @@
 import joblib
 import pandas as pd
 
-from .config import MODEL_PATH, NUMERIC_FEATURES, CATEGORICAL_FEATURES
+from .config import MODEL_PATH, NUMERIC_FEATURES, CATEGORICAL_FEATURES, THRESHOLD_CANDIDATES
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
@@ -17,29 +17,69 @@ def build_logistic_regression_pipeline() -> Pipeline:
             ("imputer", SimpleImputer(strategy="median")),
         ]
     )
-
     categorical_transformer = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="most_frequent")),
             ("onehot", OneHotEncoder(handle_unknown="ignore")),
         ]
     )
-
     preprocessor = ColumnTransformer(
         transformers=[
             ("num", numeric_transformer, NUMERIC_FEATURES),
             ("cat", categorical_transformer, CATEGORICAL_FEATURES),
         ]
     )
-
     pipeline = Pipeline(
         steps=[
             ("preprocessor", preprocessor),
             ("model", LogisticRegression(max_iter=1000)),
         ]
     )
-
     return pipeline
+
+
+def calculate_metrics_for_threshold(y_true: pd.Series, y_proba, threshold: float) -> dict:
+    y_pred = (y_proba >= threshold).astype(int)
+
+    return {
+        "accuracy": round(float(accuracy_score(y_true, y_pred)), 4),
+        "precision": round(float(precision_score(y_true, y_pred, zero_division=0)), 4),
+        "recall": round(float(recall_score(y_true, y_pred, zero_division=0)), 4),
+        "f1": round(float(f1_score(y_true, y_pred, zero_division=0)), 4),
+        "rocAuc": round(float(roc_auc_score(y_true, y_proba)), 4),
+    }
+
+
+def select_best_threshold(y_true: pd.Series, y_proba) -> tuple[float, dict]:
+    best_threshold = 0.5
+    best_metrics = None
+    best_f1 = -1.0
+    best_precision = -1.0
+
+    valid_candidates = []
+
+    for threshold in THRESHOLD_CANDIDATES:
+        metrics = calculate_metrics_for_threshold(y_true, y_proba, threshold)
+
+        if metrics["precision"] >= 0.4:
+            valid_candidates.append((threshold, metrics))
+
+    candidates_to_check = valid_candidates if valid_candidates else [
+        (threshold, calculate_metrics_for_threshold(y_true, y_proba, threshold))
+        for threshold in THRESHOLD_CANDIDATES
+    ]
+
+    for threshold, metrics in candidates_to_check:
+        if (
+            metrics["f1"] > best_f1 or
+            (metrics["f1"] == best_f1 and metrics["precision"] > best_precision)
+        ):
+            best_f1 = metrics["f1"]
+            best_precision = metrics["precision"]
+            best_threshold = threshold
+            best_metrics = metrics
+
+    return best_threshold, best_metrics
 
 
 def train_logistic_regression_model(X: pd.DataFrame, y: pd.Series) -> dict:
@@ -55,22 +95,16 @@ def train_logistic_regression_model(X: pd.DataFrame, y: pd.Series) -> dict:
 
     pipeline.fit(X_train, y_train)
 
-    y_pred = pipeline.predict(X_test)
     y_proba = pipeline.predict_proba(X_test)[:, 1]
 
-    metrics = {
-        "accuracy": round(float(accuracy_score(y_test, y_pred)), 4),
-        "precision": round(float(precision_score(y_test, y_pred, zero_division=0)), 4),
-        "recall": round(float(recall_score(y_test, y_pred, zero_division=0)), 4),
-        "f1": round(float(f1_score(y_test, y_pred, zero_division=0)), 4),
-        "rocAuc": round(float(roc_auc_score(y_test, y_proba)), 4),
-    }
+    best_threshold, best_metrics = select_best_threshold(y_test, y_proba)
 
     save_model(pipeline)
 
     return {
         "algorithm": "Logistic Regression",
-        "metrics": metrics,
+        "metrics": best_metrics,
+        "threshold": best_threshold,
     }
 
 
