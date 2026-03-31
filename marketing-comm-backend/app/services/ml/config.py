@@ -27,6 +27,7 @@ NUMERIC_FEATURES = [
     "time_trigger",
     "comm_time_sin",
     "comm_time_cos",
+    "orders_per_30_days",
 ]
 
 CATEGORICAL_FEATURES = [

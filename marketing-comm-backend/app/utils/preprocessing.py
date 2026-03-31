@@ -44,6 +44,7 @@ def prepare_base_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     result_df = df.copy()
     result_df = convert_numeric_columns(result_df)
     result_df = extract_comm_time_features(result_df)
+    result_df = add_order_history_features(result_df)
 
     if "comm_time" in result_df.columns:
         result_df = result_df.drop(columns=["comm_time"])
@@ -62,4 +63,17 @@ def prepare_training_dataframe(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Serie
 
 def prepare_prediction_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     result_df = prepare_base_dataframe(df)
+    return result_df
+
+
+def add_order_history_features(df: pd.DataFrame) -> pd.DataFrame:
+    result_df = df.copy()
+
+    safe_total_orders = result_df["total_orders"].fillna(0)
+    safe_tenure_days = result_df["tenure_days"].fillna(0)
+
+    result_df["orders_per_30_days"] = (
+        safe_total_orders / safe_tenure_days.clip(lower=1)
+    ) * 30
+
     return result_df
