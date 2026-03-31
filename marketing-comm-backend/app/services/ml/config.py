@@ -25,7 +25,8 @@ NUMERIC_FEATURES = [
     "promo_sensitivity",
     "b2c_age",
     "time_trigger",
-    "comm_hour",
+    "comm_time_sin",
+    "comm_time_cos",
 ]
 
 CATEGORICAL_FEATURES = [

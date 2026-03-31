@@ -1,4 +1,5 @@
 from app.constants.model import NUMERIC_COLUMNS, TRAIN_TARGET_COLUMN
+import numpy as np
 import pandas as pd
 
 
@@ -22,7 +23,19 @@ def extract_comm_time_features(df: pd.DataFrame) -> pd.DataFrame:
     result_df = df.copy()
 
     comm_time_parsed = pd.to_datetime(result_df["comm_time"], errors="coerce")
-    result_df["comm_hour"] = comm_time_parsed.dt.hour
+
+    seconds_from_midnight = (
+        comm_time_parsed.dt.hour * 3600
+        + comm_time_parsed.dt.minute * 60
+        + comm_time_parsed.dt.second
+    )
+
+    seconds_in_day = 24 * 60 * 60
+
+    angle = 2 * np.pi * seconds_from_midnight / seconds_in_day
+
+    result_df["comm_time_sin"] = np.sin(angle)
+    result_df["comm_time_cos"] = np.cos(angle)
 
     return result_df
 
