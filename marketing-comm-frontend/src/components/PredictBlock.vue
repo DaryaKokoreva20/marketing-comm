@@ -1,59 +1,3 @@
-<template>
-  <section class="card">
-    <h2>Прогнозирование</h2>
-
-    <p class="description">
-      Загрузите файл с новыми клиентами для расчета вероятности отклика.
-    </p>
-
-    <div v-if="!isModelReady" class="disabled-message">
-      Прогнозирование недоступно, пока модель не обучена.
-    </div>
-
-    <div v-else>
-      <input
-        type="file"
-        accept=".csv,.xlsx"
-        @change="handleFileChange"
-      />
-
-      <button
-        class="action-button"
-        :disabled="!selectedFile || isLoading"
-        @click="submitPredict"
-      >
-        {{ isLoading ? 'Расчет...' : 'Спрогнозировать отклик по новым клиентам' }}
-      </button>
-
-      <p v-if="selectedFile" class="file-name">
-        Выбран файл: {{ selectedFile.name }}
-      </p>
-
-      <p v-if="errorMessage" class="error">
-        {{ errorMessage }}
-      </p>
-
-      <p v-if="successMessage" class="success">
-        {{ successMessage }}
-      </p>
-
-      <div v-if="predictionResult" class="result-box">
-        <h3>Результат прогнозирования</h3>
-        <p><strong>Имя файла:</strong> {{ predictionResult.fileName }}</p>
-        <p><strong>Обработано клиентов:</strong> {{ predictionResult.rowsProcessed }}</p>
-        <p><strong>Сгенерировано прогнозов:</strong> {{ predictionResult.predictionsGenerated }}</p>
-
-        <button
-          class="download-button"
-          @click="handleDownload"
-        >
-          Скачать результат
-        </button>
-      </div>
-    </div>
-  </section>
-</template>
-
 <script>
 import { predictForClients, downloadPredictionResult } from '../services/api'
 
@@ -118,6 +62,62 @@ export default {
   }
 }
 </script>
+
+<template>
+  <section class="card">
+    <h2>Прогнозирование</h2>
+
+    <p class="description">
+      Загрузите файл с новыми клиентами для расчета вероятности отклика.
+    </p>
+
+    <div v-if="!isModelReady" class="disabled-message">
+      Прогнозирование недоступно, пока модель не обучена.
+    </div>
+
+    <div v-else>
+      <input
+        type="file"
+        accept=".csv,.xlsx"
+        @change="handleFileChange"
+      />
+
+      <button
+        class="action-button"
+        :disabled="!selectedFile || isLoading"
+        @click="submitPredict"
+      >
+        {{ isLoading ? 'Расчет...' : 'Спрогнозировать отклик по новым клиентам' }}
+      </button>
+
+      <p v-if="selectedFile" class="file-name">
+        Выбран файл: {{ selectedFile.name }}
+      </p>
+
+      <p v-if="errorMessage" class="error">
+        {{ errorMessage }}
+      </p>
+
+      <p v-if="successMessage" class="success">
+        {{ successMessage }}
+      </p>
+
+      <div v-if="predictionResult" class="result-box">
+        <h3>Результат прогнозирования</h3>
+        <p><strong>Имя файла:</strong> {{ predictionResult.fileName }}</p>
+        <p><strong>Обработано клиентов:</strong> {{ predictionResult.rowsProcessed }}</p>
+        <p><strong>Сгенерировано прогнозов:</strong> {{ predictionResult.predictionsGenerated }}</p>
+
+        <button
+          class="download-button"
+          @click="handleDownload"
+        >
+          Скачать результат
+        </button>
+      </div>
+    </div>
+  </section>
+</template>
 
 <style scoped>
 .card {

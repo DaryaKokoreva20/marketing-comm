@@ -9,20 +9,20 @@ export default {
   components: {
     TrainModelBlock,
     ModelStatusBlock,
-    PredictBlock
+    PredictBlock,
   },
   data() {
     return {
       modelStatus: null,
       isStatusLoading: false,
       statusError: '',
-      latestPredictionResult: null
+      latestPredictionResult: null,
     }
   },
   computed: {
     isModelReady() {
       return Boolean(this.modelStatus && this.modelStatus.trained)
-    }
+    },
   },
   methods: {
     async loadModelStatus() {
@@ -47,13 +47,13 @@ export default {
     handlePredictSuccess(payload) {
       this.latestPredictionResult = payload
       console.log('Результат прогнозирования:', payload)
-    }
+    },
   },
   mounted() {
     this.loadModelStatus()
-  }
+  },
 }
-</script>
+</script>]
 
 <template>
   <div class="page">
@@ -65,9 +65,7 @@ export default {
     </header>
 
     <main class="layout">
-      <TrainModelBlock
-        @train-success="handleTrainSuccess"
-      />
+      <TrainModelBlock @train-success="handleTrainSuccess" />
 
       <ModelStatusBlock
         :modelStatus="modelStatus"

@@ -9,7 +9,7 @@ export default {
       selectedFile: null,
       isLoading: false,
       errorMessage: '',
-      successMessage: ''
+      successMessage: '',
     }
   },
   methods: {
@@ -19,6 +19,7 @@ export default {
       this.errorMessage = ''
       this.successMessage = ''
     },
+
     async submitTrain() {
       if (!this.selectedFile) {
         this.errorMessage = 'Сначала выберите файл.'
@@ -39,8 +40,8 @@ export default {
       } finally {
         this.isLoading = false
       }
-    }
-  }
+    },
+  },
 }
 </script>
 

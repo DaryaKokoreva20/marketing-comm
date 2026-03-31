@@ -1,85 +1,100 @@
+import axios from 'axios'
+
+const api = axios.create({
+  baseURL: 'http://127.0.0.1:8000',
+  timeout: 60000,
+})
+
+function extractErrorMessage(error) {
+  if (error.response?.data?.detail) {
+    return error.response.data.detail
+  }
+
+  if (error.response?.data?.message) {
+    return error.response.data.message
+  }
+
+  if (error.message) {
+    return error.message
+  }
+
+  return 'Произошла неизвестная ошибка.'
+}
+
 export async function getModelStatus() {
-  return {
-    success: true,
-    data: {
-      trained: false,
-      algorithm: null,
-      trainedAt: null,
-      rowsCount: null,
-      featuresCount: null,
-      metrics: null
-    }
+  try {
+    const response = await api.get('/api/model/status')
+    return response.data
+  } catch (error) {
+    throw new Error(extractErrorMessage(error))
   }
 }
 
 export async function trainModel(file) {
-  if (!file) {
-    throw new Error('Файл для обучения не передан.')
-  }
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
 
-  return {
-    success: true,
-    data: {
-      trained: true,
-      algorithm: 'Logistic Regression',
-      trainedAt: new Date().toLocaleString(),
-      rowsCount: 2000,
-      featuresCount: 21,
-      metrics: {
-        accuracy: 0.81,
-        precision: 0.77,
-        recall: 0.73,
-        f1: 0.75,
-        rocAuc: 0.84
-      }
-    },
-    message: 'Модель успешно обучена.'
+    const response = await api.post('/api/model/train', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+
+    return response.data
+  } catch (error) {
+    throw new Error(extractErrorMessage(error))
   }
 }
 
 export async function predictForClients(file) {
-  if (!file) {
-    throw new Error('Файл для прогнозирования не передан.')
-  }
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
 
-  return {
-    success: true,
-    data: {
-      predictionId: 'prediction_001',
-      fileName: 'prediction_results.xlsx',
-      rowsProcessed: 150,
-      predictionsGenerated: 4200,
-      downloadUrl: '/api/model/download-prediction/prediction_001'
-    },
-    message: 'Прогноз успешно рассчитан.'
+    const response = await api.post('/api/model/predict', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+
+    return response.data
+  } catch (error) {
+    throw new Error(extractErrorMessage(error))
   }
 }
 
 export async function downloadPredictionResult(predictionResult) {
-  if (!predictionResult || !predictionResult.fileName) {
+  if (!predictionResult || !predictionResult.predictionId || !predictionResult.fileName) {
     throw new Error('Нет данных для скачивания результата.')
   }
 
-  const fileContent = [
-    'Это заглушка файла результата прогнозирования.',
-    `Файл: ${predictionResult.fileName}`,
-    `predictionId: ${predictionResult.predictionId}`,
-    `rowsProcessed: ${predictionResult.rowsProcessed}`,
-    `predictionsGenerated: ${predictionResult.predictionsGenerated}`
-  ].join('\n')
+  try {
+    const response = await api.get(
+      `/api/model/download-prediction/${predictionResult.predictionId}`,
+      {
+        responseType: 'blob',
+      }
+    )
 
-  const blob = new Blob([fileContent], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  })
+    const blob = new Blob([
+      response.data,
+    ], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
 
-  const url = window.URL.createObjectURL(blob)
-  const link = document.createElement('a')
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
 
-  link.href = url
-  link.download = predictionResult.fileName
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+    link.href = url
+    link.download = predictionResult.fileName
 
-  window.URL.revokeObjectURL(url)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    throw new Error(extractErrorMessage(error))
+  }
 }

@@ -1,7 +1,7 @@
 {
   "trained": true,
   "algorithm": "Logistic Regression",
-  "trainedAt": "2026-03-30 15:22:48",
+  "trainedAt": "2026-03-31 11:52:34",
   "rowsCount": 2000,
   "featuresCount": 20,
   "metrics": {
