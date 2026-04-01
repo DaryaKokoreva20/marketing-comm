@@ -2,7 +2,7 @@
   "logistic": {
     "trained": true,
     "algorithm": "Logistic Regression",
-    "trainedAt": "2026-04-01 16:51:45",
+    "trainedAt": "2026-04-01 17:19:39",
     "rowsCount": 2000,
     "featuresCount": 22,
     "threshold": 0.4,
@@ -20,7 +20,7 @@
   "catboost": {
     "trained": true,
     "algorithm": "CatBoost",
-    "trainedAt": "2026-04-01 16:53:03",
+    "trainedAt": "2026-04-01 17:33:29",
     "rowsCount": 2000,
     "featuresCount": 22,
     "threshold": 0.3,

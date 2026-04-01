@@ -86,10 +86,11 @@ def train_catboost_model(file: UploadFile = File(...)):
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception:
+    except Exception as e:
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
-            detail="Внутренняя ошибка при обучении модели CatBoost.",
+            detail=str(e),
         )
 
 
@@ -123,5 +124,9 @@ def download_prediction(prediction_id: str):
         )
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Файл результата не найден.")
-    except Exception:
-        raise HTTPException(status_code=500, detail="Ошибка при скачивании результата.")
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )

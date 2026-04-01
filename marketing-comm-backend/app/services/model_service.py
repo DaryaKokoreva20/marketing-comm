@@ -105,8 +105,8 @@ def train_catboost_model_from_file(upload_file) -> dict:
     validate_train_dataframe(df)
 
     catboost_df = prepare_catboost_dataframe(df)
-    X_train = catboost_df.drop(columns=["target"])
-    y_train = catboost_df["target"]
+    X_train = catboost_df
+    y_train = pd.to_numeric(df["target"], errors="coerce")
 
     from sklearn.model_selection import train_test_split
 
@@ -298,7 +298,8 @@ def predict_catboost_from_file(upload_file) -> dict:
 
 
 def get_prediction_file_path(prediction_id: str) -> Path:
-    matching_files = list(PREDICTIONS_DIR.glob(f"prediction_results_{prediction_id}.xlsx"))
+    matching_files = list(PREDICTIONS_DIR.glob(f"*{prediction_id}.xlsx"))
+
     if not matching_files:
         raise FileNotFoundError("Файл результата не найден.")
 
