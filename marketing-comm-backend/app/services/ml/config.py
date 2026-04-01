@@ -4,7 +4,8 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 STORAGE_DIR = BASE_DIR / "storage"
 MODELS_DIR = STORAGE_DIR / "models"
-MODEL_PATH = MODELS_DIR / "logistic_regression_pipeline.joblib"
+LOGISTIC_MODEL_PATH = MODELS_DIR / "logistic_regression_pipeline.joblib"
+CATBOOST_MODEL_PATH = MODELS_DIR / "catboost_model.cbm"
 
 THRESHOLD_CANDIDATES = [0.30, 0.35, 0.40, 0.45, 0.50, 0.55]
 MIN_PRECISION = 0.4
