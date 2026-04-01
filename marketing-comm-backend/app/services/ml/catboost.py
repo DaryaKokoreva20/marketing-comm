@@ -3,9 +3,10 @@ import pandas as pd
 
 from .config import (
     CATBOOST_MODEL_PATH,
-    CATBOOST_CATEGORICAL_FEATURES,
+    CATEGORICAL_FEATURES,
     THRESHOLD_CANDIDATES,
     MIN_PRECISION,
+    CATBOOST_FEATURES
 )
 
 
@@ -95,10 +96,31 @@ def train_catboost_model(
 ) -> dict:
     model = build_catboost_model()
 
+    X_train = X_train.copy()
+    X_test = X_test.copy()
+
+    for column in CATEGORICAL_FEATURES:
+        if column in X_train.columns:
+            X_train[column] = X_train[column].fillna("").astype(str)
+        if column in X_test.columns:
+            X_test[column] = X_test[column].fillna("").astype(str)
+
+    X_train = X_train.copy()
+    X_test = X_test.copy()
+
+    for column in CATEGORICAL_FEATURES:
+        if column in X_train.columns:
+            X_train[column] = X_train[column].fillna("").astype(str)
+        if column in X_test.columns:
+            X_test[column] = X_test[column].fillna("").astype(str)
+
+    X_train = X_train[CATBOOST_FEATURES]
+    X_test = X_test[CATBOOST_FEATURES]
+
     model.fit(
         X_train,
         y_train,
-        cat_features=CATBOOST_CATEGORICAL_FEATURES,
+        cat_features=CATEGORICAL_FEATURES,
     )
 
     y_proba = model.predict_proba(X_test)[:, 1]
@@ -112,8 +134,16 @@ def train_catboost_model(
         "metrics": best_metrics,
     }
 
-
 def predict_catboost_probabilities(X: pd.DataFrame) -> pd.Series:
     model = load_catboost_model()
+
+    X = X.copy()
+
+    for column in CATEGORICAL_FEATURES:
+        if column in X.columns:
+            X[column] = X[column].fillna("").astype(str)
+
+    X = X[CATBOOST_FEATURES]
+
     probabilities = model.predict_proba(X)[:, 1]
     return pd.Series(probabilities, index=X.index)

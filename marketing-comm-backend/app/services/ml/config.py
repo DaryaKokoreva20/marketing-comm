@@ -37,3 +37,28 @@ CATEGORICAL_FEATURES = [
     "channel_type",
     "scenario_type",
 ]
+
+CATBOOST_FEATURES = [
+    "client_type",
+    "tenure_days",
+    "avg_order_value",
+    "order_frequency",
+    "total_orders",
+    "recency_days",
+    "repeat_purchase_propensity",
+    "industry_category",
+    "channel_type",
+    "scenario_type",
+    "prev_response_rate",
+    "time_trigger",
+    "prev_comm_count_channel",
+    "prev_comm_response_rate_channel",
+    "last_comm_days_channel",
+    "prev_comm_count_scenario",
+    "prev_comm_response_rate_scenario",
+    "promo_sensitivity",
+    "b2c_age",
+    "comm_time_sin",
+    "comm_time_cos",
+    "orders_per_30_days",
+]

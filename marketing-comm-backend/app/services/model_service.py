@@ -1,14 +1,18 @@
-import json
-from pathlib import Path
 from datetime import datetime
+import json
+import pandas as pd
+from pathlib import Path
 from uuid import uuid4
+
 from app.constants.model import (
     AVAILABLE_CHANNELS,
     AVAILABLE_SCENARIOS
 )
 from app.services.ml import (
     train_logistic_regression_model,
-    predict_probabilities,
+    predict_logistic_probabilities,
+    train_catboost_model,
+    predict_catboost_probabilities,
 )
 from app.utils.validation import (
     validate_train_dataframe,
@@ -17,9 +21,8 @@ from app.utils.validation import (
 from app.utils.preprocessing import (
     prepare_training_dataframe,
     prepare_prediction_dataframe,
+    prepare_catboost_dataframe,
 )
-
-import pandas as pd
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -62,7 +65,7 @@ def save_uploaded_file(upload_file, destination: Path) -> None:
         f.write(upload_file.file.read())
 
 
-def train_model_from_file(upload_file) -> dict:
+def train_logistic_model_from_file(upload_file) -> dict:
     validate_file_extension(upload_file.filename)
 
     file_path = UPLOADS_DIR / upload_file.filename
@@ -74,7 +77,8 @@ def train_model_from_file(upload_file) -> dict:
     X, y = prepare_training_dataframe(df)
     training_result = train_logistic_regression_model(X, y)
 
-    metadata = {
+    metadata = read_metadata()
+    metadata["logistic"] = {
         "trained": True,
         "algorithm": training_result["algorithm"],
         "trainedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -83,21 +87,78 @@ def train_model_from_file(upload_file) -> dict:
         "threshold": training_result["threshold"],
         "classWeight": training_result["classWeight"],
         "useScaler": training_result["useScaler"],
+        "penalty": training_result["penalty"],
         "metrics": training_result["metrics"],
     }
 
     write_metadata(metadata)
-    return metadata
+    return metadata["logistic"]
 
 
-def get_model_status() -> dict:
-    return read_metadata()
+def train_catboost_model_from_file(upload_file) -> dict:
+    validate_file_extension(upload_file.filename)
 
+    file_path = UPLOADS_DIR / upload_file.filename
+    save_uploaded_file(upload_file, file_path)
 
-def predict_from_file(upload_file) -> dict:
+    df = load_dataframe(file_path)
+    validate_train_dataframe(df)
+
+    catboost_df = prepare_catboost_dataframe(df)
+    X_train = catboost_df.drop(columns=["target"])
+    y_train = catboost_df["target"]
+
+    from sklearn.model_selection import train_test_split
+
+    X_train_part, X_test_part, y_train_part, y_test_part = train_test_split(
+        X_train,
+        y_train,
+        test_size=0.2,
+        random_state=42,
+        stratify=y_train,
+    )
+
+    training_result = train_catboost_model(
+        X_train_part,
+        X_test_part,
+        y_train_part,
+        y_test_part,
+    )
+
     metadata = read_metadata()
-    if not metadata.get("trained"):
-        raise ValueError("Модель еще не обучена.")
+    metadata["catboost"] = {
+        "trained": True,
+        "algorithm": training_result["algorithm"],
+        "trainedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "rowsCount": int(len(df)),
+        "featuresCount": int(len(X_train.columns)),
+        "threshold": training_result["threshold"],
+        "classWeight": None,
+        "useScaler": None,
+        "penalty": None,
+        "metrics": training_result["metrics"],
+    }
+
+    write_metadata(metadata)
+    return metadata["catboost"]
+
+
+def get_logistic_model_status() -> dict:
+    metadata = read_metadata()
+    return metadata["logistic"]
+
+
+def get_catboost_model_status() -> dict:
+    metadata = read_metadata()
+    return metadata["catboost"]
+
+
+def predict_logistic_from_file(upload_file) -> dict:
+    metadata = read_metadata()
+    logistic_metadata = metadata["logistic"]
+
+    if not logistic_metadata.get("trained"):
+        raise ValueError("Модель логистической регрессии еще не обучена.")
 
     validate_file_extension(upload_file.filename)
 
@@ -108,7 +169,7 @@ def predict_from_file(upload_file) -> dict:
     validate_predict_dataframe(df)
 
     prediction_id = str(uuid4())
-    output_file_name = f"prediction_results_{prediction_id}.xlsx"
+    output_file_name = f"prediction_results_logistic_{prediction_id}.xlsx"
     output_path = PREDICTIONS_DIR / output_file_name
 
     base_df = df.copy()
@@ -126,13 +187,85 @@ def predict_from_file(upload_file) -> dict:
                 new_row["channel_type"] = channel
                 new_row["scenario_type"] = scenario
                 expanded_rows.append(new_row)
-    
+
     result_df = pd.DataFrame(expanded_rows)
     prediction_features_df = prepare_prediction_dataframe(result_df)
 
-    result_df["predicted_probability"] = predict_probabilities(prediction_features_df)
+    result_df["predicted_probability"] = predict_logistic_probabilities(prediction_features_df)
 
-    threshold = metadata.get("threshold")
+    threshold = logistic_metadata.get("threshold")
+    if threshold is None:
+        threshold = 0.5
+
+    result_df["predicted_class"] = (
+        result_df["predicted_probability"] >= threshold
+    ).astype(int)
+
+    result_df = result_df.sort_values(
+        by=["client_row_id", "predicted_probability"],
+        ascending=[True, False]
+    ).reset_index(drop=True)
+
+    result_df["rank_within_client"] = (
+        result_df.groupby("client_row_id").cumcount() + 1
+    )
+
+    top_recommendations_df = result_df[result_df["rank_within_client"] == 1].copy()
+
+    with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
+        result_df.to_excel(writer, index=False, sheet_name="all_predictions")
+        top_recommendations_df.to_excel(writer, index=False, sheet_name="top_recommendations")
+
+    return {
+        "predictionId": prediction_id,
+        "fileName": output_file_name,
+        "rowsProcessed": int(len(df)),
+        "predictionsGenerated": int(len(result_df)),
+        "downloadUrl": f"/api/model/download-prediction/{prediction_id}"
+    }
+
+
+def predict_catboost_from_file(upload_file) -> dict:
+    metadata = read_metadata()
+    catboost_metadata = metadata["catboost"]
+
+    if not catboost_metadata.get("trained"):
+        raise ValueError("Модель CatBoost еще не обучена.")
+
+    validate_file_extension(upload_file.filename)
+
+    file_path = UPLOADS_DIR / upload_file.filename
+    save_uploaded_file(upload_file, file_path)
+
+    df = load_dataframe(file_path)
+    validate_predict_dataframe(df)
+
+    prediction_id = str(uuid4())
+    output_file_name = f"prediction_results_catboost_{prediction_id}.xlsx"
+    output_path = PREDICTIONS_DIR / output_file_name
+
+    base_df = df.copy()
+    base_df = base_df.reset_index(drop=True)
+    base_df["client_row_id"] = base_df.index + 1
+
+    expanded_rows = []
+
+    for _, row in base_df.iterrows():
+        row_dict = row.to_dict()
+
+        for channel in AVAILABLE_CHANNELS:
+            for scenario in AVAILABLE_SCENARIOS:
+                new_row = row_dict.copy()
+                new_row["channel_type"] = channel
+                new_row["scenario_type"] = scenario
+                expanded_rows.append(new_row)
+
+    result_df = pd.DataFrame(expanded_rows)
+    prediction_features_df = prepare_catboost_dataframe(result_df)
+
+    result_df["predicted_probability"] = predict_catboost_probabilities(prediction_features_df)
+
+    threshold = catboost_metadata.get("threshold")
     if threshold is None:
         threshold = 0.5
 

@@ -1,7 +1,7 @@
 import joblib
 import pandas as pd
 
-from .config import MODEL_PATH, NUMERIC_FEATURES, CATEGORICAL_FEATURES, THRESHOLD_CANDIDATES, MIN_PRECISION
+from .config import LOGISTIC_MODEL_PATH, NUMERIC_FEATURES, CATEGORICAL_FEATURES, THRESHOLD_CANDIDATES, MIN_PRECISION
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
@@ -11,7 +11,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 
-def build_logistic_regression_pipeline(class_weight=None, use_scaler=False) -> Pipeline:
+def build_logistic_regression_pipeline(class_weight=None, use_scaler=False, penalty="l2") -> Pipeline:
     numeric_steps = [
         ("imputer", SimpleImputer(strategy="median")),
     ]
@@ -36,7 +36,7 @@ def build_logistic_regression_pipeline(class_weight=None, use_scaler=False) -> P
     pipeline = Pipeline(
         steps=[
             ("preprocessor", preprocessor),
-            ("model", LogisticRegression(max_iter=1000, class_weight=class_weight,)),
+            ("model", LogisticRegression(max_iter=3000, class_weight=class_weight,)),
         ]
     )
     return pipeline
@@ -93,10 +93,12 @@ def train_single_logistic_regression_model(
     y_test: pd.Series,
     class_weight=None,
     use_scaler=False,
+    penalty="l2",
 ) -> dict:
     pipeline = build_logistic_regression_pipeline(
         class_weight=class_weight,
         use_scaler=use_scaler,
+        penalty=penalty,
     )
 
     pipeline.fit(X_train, y_train)
@@ -109,6 +111,7 @@ def train_single_logistic_regression_model(
         "algorithm": "Logistic Regression",
         "classWeight": class_weight,
         "useScaler": use_scaler,
+        "penalty": penalty,
         "threshold": best_threshold,
         "metrics": best_metrics,
     }
@@ -171,7 +174,7 @@ def train_logistic_regression_model(X: pd.DataFrame, y: pd.Series) -> dict:
         if is_better_result(candidate, best_result):
             best_result = candidate
 
-    save_model(best_result["pipeline"])
+    save_logistic_model(best_result["pipeline"])
 
     return {
         "algorithm": best_result["algorithm"],
@@ -179,29 +182,30 @@ def train_logistic_regression_model(X: pd.DataFrame, y: pd.Series) -> dict:
         "threshold": best_result["threshold"],
         "classWeight": best_result["classWeight"],
         "useScaler": best_result["useScaler"],
+        "penalty": best_result["penalty"],
     }
 
 
-def save_model(model: Pipeline) -> None:
-    MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-    joblib.dump(model, MODEL_PATH)
+def save_logistic_model(model: Pipeline) -> None:
+    LOGISTIC_MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(model, LOGISTIC_MODEL_PATH)
 
 
-def load_model() -> Pipeline:
-    if not MODEL_PATH.exists():
-        raise FileNotFoundError("Файл обученной модели не найден.")
+def load_logistic_model() -> Pipeline:
+    if not LOGISTIC_MODEL_PATH.exists():
+        raise FileNotFoundError("Файл обученной модели логистической регрессии не найден.")
 
-    return joblib.load(MODEL_PATH)
+    return joblib.load(LOGISTIC_MODEL_PATH)
 
 
-def predict_probabilities(X: pd.DataFrame) -> pd.Series:
-    model = load_model()
+def predict_logistic_probabilities(X: pd.DataFrame) -> pd.Series:
+    model = load_logistic_model()
     probabilities = model.predict_proba(X)[:, 1]
     return pd.Series(probabilities, index=X.index)
 
 
-def get_feature_coefficients() -> pd.DataFrame:
-    model = load_model()
+def get_logistic_feature_coefficients() -> pd.DataFrame:
+    model = load_logistic_model()
 
     preprocessor = model.named_steps["preprocessor"]
     logistic_model = model.named_steps["model"]
@@ -221,24 +225,3 @@ def get_feature_coefficients() -> pd.DataFrame:
     ).reset_index(drop=True)
 
     return coefficients_df
-
-
-def get_feature_coefficients() -> pd.DataFrame:
-    model = load_model()
-
-    preprocessor = model.named_steps["preprocessor"]
-    logistic_model = model.named_steps["model"]
-
-    feature_names = preprocessor.get_feature_names_out()
-    coefficients = logistic_model.coef_[0]
-
-    coefficients_df = pd.DataFrame({
-        "feature": feature_names,
-        "coefficient": coefficients,
-    })
-
-    coefficients_df["abs_coefficient"] = coefficients_df["coefficient"].abs()
-    coefficients_df = coefficients_df.sort_values(
-        by="abs_coefficient",
-        ascending=False
-    ).reset_index(drop=True)

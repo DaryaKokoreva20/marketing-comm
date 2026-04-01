@@ -1,4 +1,6 @@
 from app.constants.model import NUMERIC_COLUMNS, TRAIN_TARGET_COLUMN
+from app.services.ml.config import CATEGORICAL_FEATURES, CATBOOST_FEATURES
+
 import numpy as np
 import pandas as pd
 
@@ -63,6 +65,18 @@ def prepare_training_dataframe(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Serie
 
 def prepare_prediction_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     result_df = prepare_base_dataframe(df)
+    return result_df
+
+
+def prepare_catboost_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    result_df = prepare_base_dataframe(df)
+
+    for column in CATEGORICAL_FEATURES:
+        if column in result_df.columns:
+            result_df[column] = result_df[column].fillna("").astype(str)
+
+    result_df = result_df[CATBOOST_FEATURES]
+
     return result_df
 
 

@@ -1,23 +1,38 @@
 {
   "logistic": {
-    "trained": false,
+    "trained": true,
     "algorithm": "Logistic Regression",
-    "trainedAt": null,
-    "rowsCount": null,
-    "featuresCount": null,
-    "threshold": null,
+    "trainedAt": "2026-04-01 16:51:45",
+    "rowsCount": 2000,
+    "featuresCount": 22,
+    "threshold": 0.4,
+    "classWeight": "balanced",
+    "useScaler": false,
+    "penalty": "l2",
+    "metrics": {
+      "accuracy": 0.54,
+      "precision": 0.3465,
+      "recall": 0.8302,
+      "f1": 0.4889,
+      "rocAuc": 0.6676
+    }
+  },
+  "catboost": {
+    "trained": true,
+    "algorithm": "CatBoost",
+    "trainedAt": "2026-04-01 16:53:03",
+    "rowsCount": 2000,
+    "featuresCount": 22,
+    "threshold": 0.3,
     "classWeight": null,
     "useScaler": null,
     "penalty": null,
-    "metrics": null
-  },
-  "catboost": {
-    "trained": false,
-    "algorithm": "CatBoost",
-    "trainedAt": null,
-    "rowsCount": null,
-    "featuresCount": null,
-    "threshold": null,
-    "metrics": null
+    "metrics": {
+      "accuracy": 0.6775,
+      "precision": 0.4017,
+      "recall": 0.4434,
+      "f1": 0.4215,
+      "rocAuc": 0.6521
+    }
   }
 }
