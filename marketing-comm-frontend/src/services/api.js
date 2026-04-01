@@ -21,21 +21,31 @@ function extractErrorMessage(error) {
   return 'Произошла неизвестная ошибка.'
 }
 
-export async function getModelStatus() {
+function getModelBasePath(modelType) {
+  if (modelType === 'catboost') {
+    return '/api/model/catboost'
+  }
+
+  return '/api/model/logistic'
+}
+
+export async function getModelStatus(modelType) {
   try {
-    const response = await api.get('/api/model/status')
+    const basePath = getModelBasePath(modelType)
+    const response = await api.get(`${basePath}/status`)
     return response.data
   } catch (error) {
     throw new Error(extractErrorMessage(error))
   }
 }
 
-export async function trainModel(file) {
+export async function trainModel(modelType, file) {
   try {
+    const basePath = getModelBasePath(modelType)
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await api.post('/api/model/train', formData, {
+    const response = await api.post(`${basePath}/train`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -47,12 +57,13 @@ export async function trainModel(file) {
   }
 }
 
-export async function predictForClients(file) {
+export async function predictForClients(modelType, file) {
   try {
+    const basePath = getModelBasePath(modelType)
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await api.post('/api/model/predict', formData, {
+    const response = await api.post(`${basePath}/predict`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -77,9 +88,7 @@ export async function downloadPredictionResult(predictionResult) {
       }
     )
 
-    const blob = new Blob([
-      response.data,
-    ], {
+    const blob = new Blob([response.data], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     })
 

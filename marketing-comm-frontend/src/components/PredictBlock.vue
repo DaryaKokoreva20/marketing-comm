@@ -1,78 +1,13 @@
-<script>
-import { predictForClients, downloadPredictionResult } from '../services/api'
-
-export default {
-  name: 'PredictBlock',
-  props: {
-    isModelReady: {
-      type: Boolean,
-      default: false
-    }
-  },
-  emits: ['predict-success'],
-  data() {
-    return {
-      selectedFile: null,
-      isLoading: false,
-      errorMessage: '',
-      successMessage: '',
-      predictionResult: null
-    }
-  },
-  methods: {
-    handleFileChange(event) {
-      this.selectedFile = event.target.files[0] || null
-      this.errorMessage = ''
-      this.successMessage = ''
-      this.predictionResult = null
-    },
-
-    async submitPredict() {
-      if (!this.selectedFile) {
-        this.errorMessage = 'Сначала выберите файл.'
-        return
-      }
-
-      this.isLoading = true
-      this.errorMessage = ''
-      this.successMessage = ''
-      this.predictionResult = null
-
-      try {
-        const response = await predictForClients(this.selectedFile)
-
-        this.successMessage = response.message || 'Прогноз успешно рассчитан.'
-        this.predictionResult = response.data
-
-        this.$emit('predict-success', response.data)
-      } catch (error) {
-        this.errorMessage = error.message || 'Не удалось выполнить прогнозирование.'
-      } finally {
-        this.isLoading = false
-      }
-    },
-
-    async handleDownload() {
-      try {
-        await downloadPredictionResult(this.predictionResult)
-      } catch (error) {
-        this.errorMessage = error.message || 'Не удалось скачать результат.'
-      }
-    }
-  }
-}
-</script>
-
 <template>
   <section class="card">
     <h2>Прогнозирование</h2>
 
     <p class="description">
-      Загрузите файл с новыми клиентами для расчета вероятности отклика.
+      Загрузите файл с новыми клиентами для расчета вероятности отклика с помощью модели {{ modelLabel }}.
     </p>
 
     <div v-if="!isModelReady" class="disabled-message">
-      Прогнозирование недоступно, пока модель не обучена.
+      Прогнозирование недоступно, пока модель {{ modelLabel }} не обучена.
     </div>
 
     <div v-else>
@@ -87,7 +22,7 @@ export default {
         :disabled="!selectedFile || isLoading"
         @click="submitPredict"
       >
-        {{ isLoading ? 'Расчет...' : 'Спрогнозировать отклик по новым клиентам' }}
+        {{ isLoading ? 'Расчет...' : `Спрогнозировать через ${modelLabel}` }}
       </button>
 
       <p v-if="selectedFile" class="file-name">
@@ -118,6 +53,77 @@ export default {
     </div>
   </section>
 </template>
+
+<script>
+import { predictForClients, downloadPredictionResult } from '../services/api'
+
+export default {
+  name: 'PredictBlock',
+  props: {
+    modelType: {
+      type: String,
+      required: true,
+    },
+    modelLabel: {
+      type: String,
+      required: true,
+    },
+    isModelReady: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  emits: ['predict-success'],
+  data() {
+    return {
+      selectedFile: null,
+      isLoading: false,
+      errorMessage: '',
+      successMessage: '',
+      predictionResult: null,
+    }
+  },
+  methods: {
+    handleFileChange(event) {
+      this.selectedFile = event.target.files[0] || null
+      this.errorMessage = ''
+      this.successMessage = ''
+      this.predictionResult = null
+    },
+
+    async submitPredict() {
+      if (!this.selectedFile) {
+        this.errorMessage = 'Сначала выберите файл.'
+        return
+      }
+
+      this.isLoading = true
+      this.errorMessage = ''
+      this.successMessage = ''
+      this.predictionResult = null
+
+      try {
+        const response = await predictForClients(this.modelType, this.selectedFile)
+        this.successMessage = response.message || 'Прогноз успешно рассчитан.'
+        this.predictionResult = response.data
+        this.$emit('predict-success', response.data)
+      } catch (error) {
+        this.errorMessage = error.message || 'Не удалось выполнить прогнозирование.'
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async handleDownload() {
+      try {
+        await downloadPredictionResult(this.predictionResult)
+      } catch (error) {
+        this.errorMessage = error.message || 'Не удалось скачать результат.'
+      }
+    },
+  },
+}
+</script>
 
 <style scoped>
 .card {

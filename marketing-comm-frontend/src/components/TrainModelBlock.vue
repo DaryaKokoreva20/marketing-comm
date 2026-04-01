@@ -1,8 +1,54 @@
+<template>
+  <section class="card">
+    <h2>Обучение модели</h2>
+
+    <p class="description">
+      Загрузите CSV или XLSX файл с историческими данными для обучения модели {{ modelLabel }}.
+    </p>
+
+    <input
+      type="file"
+      accept=".csv,.xlsx"
+      @change="handleFileChange"
+    />
+
+    <button
+      class="action-button"
+      :disabled="!selectedFile || isLoading"
+      @click="submitTrain"
+    >
+      {{ isLoading ? 'Обучение...' : `Обучить ${modelLabel}` }}
+    </button>
+
+    <p v-if="selectedFile" class="file-name">
+      Выбран файл: {{ selectedFile.name }}
+    </p>
+
+    <p v-if="errorMessage" class="error">
+      {{ errorMessage }}
+    </p>
+
+    <p v-if="successMessage" class="success">
+      {{ successMessage }}
+    </p>
+  </section>
+</template>
+
 <script>
 import { trainModel } from '../services/api'
 
 export default {
   name: 'TrainModelBlock',
+  props: {
+    modelType: {
+      type: String,
+      required: true,
+    },
+    modelLabel: {
+      type: String,
+      required: true,
+    },
+  },
   emits: ['train-success'],
   data() {
     return {
@@ -31,8 +77,7 @@ export default {
       this.successMessage = ''
 
       try {
-        const response = await trainModel(this.selectedFile)
-
+        const response = await trainModel(this.modelType, this.selectedFile)
         this.successMessage = response.message || 'Модель успешно обучена.'
         this.$emit('train-success', response.data)
       } catch (error) {
@@ -44,42 +89,6 @@ export default {
   },
 }
 </script>
-
-<template>
-  <section class="card">
-    <h2>Обучение модели</h2>
-
-    <p class="description">
-      Загрузите CSV или XLSX файл с историческими данными для обучения модели.
-    </p>
-
-    <input
-      type="file"
-      accept=".csv,.xlsx"
-      @change="handleFileChange"
-    />
-
-    <button
-      class="action-button"
-      :disabled="!selectedFile || isLoading"
-      @click="submitTrain"
-    >
-      {{ isLoading ? 'Обучение...' : 'Обучить модель на данных' }}
-    </button>
-
-    <p v-if="selectedFile" class="file-name">
-      Выбран файл: {{ selectedFile.name }}
-    </p>
-
-    <p v-if="errorMessage" class="error">
-      {{ errorMessage }}
-    </p>
-
-    <p v-if="successMessage" class="success">
-      {{ successMessage }}
-    </p>
-  </section>
-</template>
 
 <style scoped>
 .card {
