@@ -39,3 +39,24 @@ def get_feature_coefficients() -> pd.DataFrame:
     ).reset_index(drop=True)
 
     return coefficients_df
+
+
+def get_feature_coefficients() -> pd.DataFrame:
+    model = load_model()
+
+    preprocessor = model.named_steps["preprocessor"]
+    logistic_model = model.named_steps["model"]
+
+    feature_names = preprocessor.get_feature_names_out()
+    coefficients = logistic_model.coef_[0]
+
+    coefficients_df = pd.DataFrame({
+        "feature": feature_names,
+        "coefficient": coefficients,
+    })
+
+    coefficients_df["abs_coefficient"] = coefficients_df["coefficient"].abs()
+    coefficients_df = coefficients_df.sort_values(
+        by="abs_coefficient",
+        ascending=False
+    ).reset_index(drop=True)
