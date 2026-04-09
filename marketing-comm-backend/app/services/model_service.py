@@ -133,7 +133,7 @@ def train_catboost_model_from_file(upload_file) -> dict:
         "rowsCount": int(len(df)),
         "featuresCount": int(len(X_train.columns)),
         "threshold": training_result["threshold"],
-        "classWeight": None,
+        "classWeights": training_result["classWeights"],
         "useScaler": None,
         "penalty": None,
         "metrics": training_result["metrics"],

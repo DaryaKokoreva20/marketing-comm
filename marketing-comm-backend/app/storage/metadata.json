@@ -2,7 +2,7 @@
   "logistic": {
     "trained": true,
     "algorithm": "Logistic Regression",
-    "trainedAt": "2026-04-01 17:19:39",
+    "trainedAt": "2026-04-09 11:53:54",
     "rowsCount": 2000,
     "featuresCount": 22,
     "threshold": 0.4,
@@ -20,19 +20,22 @@
   "catboost": {
     "trained": true,
     "algorithm": "CatBoost",
-    "trainedAt": "2026-04-01 17:33:29",
+    "trainedAt": "2026-04-09 13:47:19",
     "rowsCount": 2000,
     "featuresCount": 22,
-    "threshold": 0.3,
-    "classWeight": null,
+    "threshold": 0.55,
+    "classWeights": [
+      1,
+      3
+    ],
     "useScaler": null,
     "penalty": null,
     "metrics": {
-      "accuracy": 0.6775,
-      "precision": 0.4017,
-      "recall": 0.4434,
-      "f1": 0.4215,
-      "rocAuc": 0.6521
+      "accuracy": 0.75,
+      "precision": 0.5375,
+      "recall": 0.4057,
+      "f1": 0.4624,
+      "rocAuc": 0.6608
     }
   }
 }

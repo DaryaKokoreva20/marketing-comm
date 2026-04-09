@@ -7,8 +7,9 @@ MODELS_DIR = STORAGE_DIR / "models"
 LOGISTIC_MODEL_PATH = MODELS_DIR / "logistic_regression_pipeline.joblib"
 CATBOOST_MODEL_PATH = MODELS_DIR / "catboost_model.cbm"
 
-THRESHOLD_CANDIDATES = [0.30, 0.35, 0.40, 0.45, 0.50, 0.55]
+THRESHOLD_CANDIDATES = [0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55]
 MIN_PRECISION = 0.4
+MIN_RECALL = 0.4
 
 NUMERIC_FEATURES = [
     "tenure_days",

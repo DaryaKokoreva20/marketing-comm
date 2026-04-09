@@ -4,13 +4,19 @@ import pandas as pd
 from .config import (
     CATBOOST_MODEL_PATH,
     CATEGORICAL_FEATURES,
+    CATBOOST_FEATURES,
     THRESHOLD_CANDIDATES,
     MIN_PRECISION,
-    CATBOOST_FEATURES
 )
 
 
-def build_catboost_model() -> CatBoostClassifier:
+CLASS_WEIGHTS_OPTIONS = [
+    None,
+    [1, 3],
+]
+
+
+def build_catboost_model(class_weights=None) -> CatBoostClassifier:
     return CatBoostClassifier(
         iterations=300,
         learning_rate=0.05,
@@ -19,6 +25,7 @@ def build_catboost_model() -> CatBoostClassifier:
         eval_metric="AUC",
         verbose=False,
         random_seed=42,
+        class_weights=class_weights,
     )
 
 
@@ -88,22 +95,14 @@ def load_catboost_model() -> CatBoostClassifier:
     return model
 
 
-def train_catboost_model(
+def train_single_catboost_model(
     X_train: pd.DataFrame,
     X_test: pd.DataFrame,
     y_train: pd.Series,
     y_test: pd.Series,
+    class_weights=None,
 ) -> dict:
-    model = build_catboost_model()
-
-    X_train = X_train.copy()
-    X_test = X_test.copy()
-
-    for column in CATEGORICAL_FEATURES:
-        if column in X_train.columns:
-            X_train[column] = X_train[column].fillna("").astype(str)
-        if column in X_test.columns:
-            X_test[column] = X_test[column].fillna("").astype(str)
+    model = build_catboost_model(class_weights=class_weights)
 
     X_train = X_train.copy()
     X_test = X_test.copy()
@@ -126,13 +125,68 @@ def train_catboost_model(
     y_proba = model.predict_proba(X_test)[:, 1]
     best_threshold, best_metrics = select_best_threshold(y_test, y_proba)
 
-    save_catboost_model(model)
-
     return {
+        "model": model,
         "algorithm": "CatBoost",
         "threshold": best_threshold,
+        "classWeights": class_weights,
         "metrics": best_metrics,
     }
+
+
+def is_better_result(candidate: dict, current_best: dict | None) -> bool:
+    if current_best is None:
+        return True
+
+    candidate_f1 = candidate["metrics"]["f1"]
+    current_f1 = current_best["metrics"]["f1"]
+
+    candidate_precision = candidate["metrics"]["precision"]
+    current_precision = current_best["metrics"]["precision"]
+
+    if candidate_f1 > current_f1:
+        return True
+
+    if candidate_f1 == current_f1 and candidate_precision > current_precision:
+        return True
+
+    return False
+
+
+def train_catboost_model(
+    X_train: pd.DataFrame,
+    X_test: pd.DataFrame,
+    y_train: pd.Series,
+    y_test: pd.Series,
+) -> dict:
+    candidate_results = []
+
+    for class_weights in CLASS_WEIGHTS_OPTIONS:
+        candidate_results.append(
+            train_single_catboost_model(
+                X_train,
+                X_test,
+                y_train,
+                y_test,
+                class_weights=class_weights,
+            )
+        )
+
+    best_result = None
+
+    for candidate in candidate_results:
+        if is_better_result(candidate, best_result):
+            best_result = candidate
+
+    save_catboost_model(best_result["model"])
+
+    return {
+        "algorithm": best_result["algorithm"],
+        "threshold": best_result["threshold"],
+        "classWeights": best_result["classWeights"],
+        "metrics": best_result["metrics"],
+    }
+
 
 def predict_catboost_probabilities(X: pd.DataFrame) -> pd.Series:
     model = load_catboost_model()

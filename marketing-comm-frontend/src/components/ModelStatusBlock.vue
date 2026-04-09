@@ -19,7 +19,7 @@
       <p><strong>Количество строк:</strong> {{ modelStatus.rowsCount ?? '—' }}</p>
       <p><strong>Количество признаков:</strong> {{ modelStatus.featuresCount ?? '—' }}</p>
       <p><strong>Threshold:</strong> {{ modelStatus.threshold ?? '—' }}</p>
-      <p><strong>Class weight:</strong> {{ modelStatus.classWeight ?? '—' }}</p>
+      <p><strong>Class weighting:</strong> {{ formatClassWeights(modelStatus) ?? '—'}}</p>
       <p><strong>Use scaler:</strong> {{ modelStatus.useScaler ?? '—' }}</p>
       <p><strong>Penalty:</strong> {{ modelStatus.penalty ?? '—' }}</p>
 
@@ -56,6 +56,21 @@ export default {
       required: true,
     },
   },
+  methods: {
+    formatClassWeights(modelStatus) {
+      if (modelStatus.classWeights) {
+        return Array.isArray(modelStatus.classWeights)
+          ? modelStatus.classWeights.join(', ')
+          : modelStatus.classWeights
+      }
+
+      if (modelStatus.classWeight) {
+        return modelStatus.classWeight
+      }
+
+      return '—'
+    },
+  }
 }
 </script>
 
