@@ -87,7 +87,6 @@ def train_logistic_model_from_file(upload_file) -> dict:
         "threshold": training_result["threshold"],
         "classWeight": training_result["classWeight"],
         "useScaler": training_result["useScaler"],
-        "penalty": training_result["penalty"],
         "metrics": training_result["metrics"],
     }
 

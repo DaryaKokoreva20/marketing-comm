@@ -46,7 +46,8 @@ def prepare_base_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     result_df = df.copy()
     result_df = convert_numeric_columns(result_df)
     result_df = extract_comm_time_features(result_df)
-    result_df = add_order_history_features(result_df)
+    result_df = add_new_features(result_df)
+    result_df = add_polynomial_features(result_df)
 
     if "comm_time" in result_df.columns:
         result_df = result_df.drop(columns=["comm_time"])
@@ -80,14 +81,62 @@ def prepare_catboost_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     return result_df
 
 
-def add_order_history_features(df: pd.DataFrame) -> pd.DataFrame:
+import numpy as np
+import pandas as pd
+
+
+def add_new_features(df: pd.DataFrame) -> pd.DataFrame:
     result_df = df.copy()
 
     safe_total_orders = result_df["total_orders"].fillna(0)
     safe_tenure_days = result_df["tenure_days"].fillna(0)
+    safe_recency_days = result_df["recency_days"].fillna(0)
+    safe_prev_comm_count_channel = result_df["prev_comm_count_channel"].fillna(0)
+    safe_last_comm_days_channel = result_df["last_comm_days_channel"].fillna(0)
+
+    comm_time = pd.to_datetime(result_df["comm_time"], errors="coerce")
 
     result_df["orders_per_30_days"] = (
         safe_total_orders / safe_tenure_days.clip(lower=1)
     ) * 30
+
+    result_df["recency_to_tenure_ratio"] = (
+        safe_recency_days / (safe_tenure_days + 1)
+    )
+
+    result_df["channel_fatigue_ratio"] = (
+        safe_prev_comm_count_channel / (safe_last_comm_days_channel + 1)
+    )
+
+    # result_df["comm_weekday"] = comm_time.dt.weekday
+    # result_df["is_weekend"] = (result_df["comm_weekday"] >= 5).astype(int)
+
+    # result_df["avg_order_value_squared"] = (
+    #     result_df["avg_order_value"].fillna(0) ** 2
+    # )
+
+    # result_df["random_noise_feature"] = np.random.normal(0, 1, len(result_df))
+
+    return result_df
+
+
+def add_polynomial_features(df: pd.DataFrame) -> pd.DataFrame:
+    result_df = df.copy()
+
+    base_features = [
+        "recency_days",
+        "order_frequency",
+        "total_orders",
+        "last_comm_days_channel",
+        "promo_sensitivity",
+    ]
+
+    for col in base_features:
+        safe_col = result_df[col].fillna(0)
+
+        normalized = (safe_col - safe_col.mean()) / (safe_col.std() + 1e-6)
+
+        result_df[f"{col}_squared"] = normalized ** 2
+        result_df[f"{col}_cubed"] = normalized ** 3
 
     return result_df

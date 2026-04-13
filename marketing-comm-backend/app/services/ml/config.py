@@ -7,9 +7,37 @@ MODELS_DIR = STORAGE_DIR / "models"
 LOGISTIC_MODEL_PATH = MODELS_DIR / "logistic_regression_pipeline.joblib"
 CATBOOST_MODEL_PATH = MODELS_DIR / "catboost_model.cbm"
 
-THRESHOLD_CANDIDATES = [0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55]
-MIN_PRECISION = 0.4
-MIN_RECALL = 0.4
+THRESHOLD_CANDIDATES = [0.50, 0.55]
+
+MODEL_SELECTION_CONFIG = {
+    "min_precision": 0.4,
+    "min_recall": 0.4,
+    "primary_metric": "f1",
+    "secondary_metric": "recall",
+}
+
+TRAIN_TEST_SPLIT_CONFIG = {
+    "test_size": 0.2,
+    "random_state": 42,
+    "stratify": True,
+}
+
+LOGISTIC_SEARCH_CONFIG = {
+    "enabled": True,
+    "params": {
+        "class_weight": [
+            None,
+            "balanced",
+            {0: 1, 1: 3},
+            {0: 1, 1: 5},
+            {0: 1, 1: 7},
+        ],
+        "use_scaler": [False, True],
+        "solver": ["liblinear"],
+        "max_iter": [3000, 5000],
+        "C": [0.3, 1.0, 3.0],
+    },
+}
 
 NUMERIC_FEATURES = [
     "tenure_days",
@@ -30,6 +58,22 @@ NUMERIC_FEATURES = [
     "comm_time_sin",
     "comm_time_cos",
     "orders_per_30_days",
+    "recency_to_tenure_ratio",
+    "channel_fatigue_ratio",
+    # "comm_weekday",
+    # "is_weekend",
+    # "avg_order_value_squared",
+    # "random_noise_feature",
+    # "recency_days_squared",
+    # "order_frequency_squared",
+    # "total_orders_squared",
+    # "last_comm_days_channel_squared",
+    # "promo_sensitivity_squared",
+    # "recency_days_cubed",
+    # "order_frequency_cubed",
+    # "total_orders_cubed",
+    # "last_comm_days_channel_cubed",
+    # "promo_sensitivity_cubed",
 ]
 
 CATEGORICAL_FEATURES = [

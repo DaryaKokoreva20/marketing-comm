@@ -2,28 +2,27 @@
   "logistic": {
     "trained": true,
     "algorithm": "Logistic Regression",
-    "trainedAt": "2026-04-09 11:53:54",
-    "rowsCount": 2000,
-    "featuresCount": 22,
-    "threshold": 0.4,
-    "classWeight": "balanced",
-    "useScaler": false,
-    "penalty": "l2",
+    "trainedAt": "2026-04-13 21:50:33",
+    "rowsCount": 3000,
+    "featuresCount": 34,
+    "threshold": 0.55,
+    "classWeight": "0:1, 1:5",
+    "useScaler": true,
     "metrics": {
-      "accuracy": 0.54,
-      "precision": 0.3465,
-      "recall": 0.8302,
-      "f1": 0.4889,
-      "rocAuc": 0.6676
+      "accuracy": 0.7633,
+      "precision": 0.2961,
+      "recall": 0.5625,
+      "f1": 0.3879,
+      "rocAuc": 0.7467
     }
   },
   "catboost": {
     "trained": true,
     "algorithm": "CatBoost",
-    "trainedAt": "2026-04-09 13:47:19",
-    "rowsCount": 2000,
+    "trainedAt": "2026-04-13 10:15:43",
+    "rowsCount": 3000,
     "featuresCount": 22,
-    "threshold": 0.55,
+    "threshold": 0.25,
     "classWeights": [
       1,
       3
@@ -31,11 +30,11 @@
     "useScaler": null,
     "penalty": null,
     "metrics": {
-      "accuracy": 0.75,
-      "precision": 0.5375,
-      "recall": 0.4057,
-      "f1": 0.4624,
-      "rocAuc": 0.6608
+      "accuracy": 0.69,
+      "precision": 0.25,
+      "recall": 0.5814,
+      "f1": 0.3497,
+      "rocAuc": 0.6948
     }
   }
 }

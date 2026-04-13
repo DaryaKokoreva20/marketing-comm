@@ -6,7 +6,7 @@ from .config import (
     CATEGORICAL_FEATURES,
     CATBOOST_FEATURES,
     THRESHOLD_CANDIDATES,
-    MIN_PRECISION,
+    MODEL_SELECTION_CONFIG,
 )
 
 
@@ -60,7 +60,7 @@ def select_best_threshold(y_true: pd.Series, y_proba) -> tuple[float, dict]:
     for threshold in THRESHOLD_CANDIDATES:
         metrics = calculate_metrics_for_threshold(y_true, y_proba, threshold)
 
-        if metrics["precision"] >= MIN_PRECISION:
+        if metrics["precision"] >= MODEL_SELECTION_CONFIG["min_precision"]:
             valid_candidates.append((threshold, metrics))
 
     candidates_to_check = valid_candidates if valid_candidates else [

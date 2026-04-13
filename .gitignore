@@ -416,3 +416,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+dataset.py
+marketing_dataset_diploma.csv
