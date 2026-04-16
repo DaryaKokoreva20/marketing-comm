@@ -47,7 +47,7 @@ def prepare_base_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     result_df = convert_numeric_columns(result_df)
     result_df = extract_comm_time_features(result_df)
     result_df = add_new_features(result_df)
-    result_df = add_polynomial_features(result_df)
+    # result_df = add_polynomial_features(result_df)
 
     if "comm_time" in result_df.columns:
         result_df = result_df.drop(columns=["comm_time"])

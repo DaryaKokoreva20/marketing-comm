@@ -2,27 +2,27 @@
   "logistic": {
     "trained": true,
     "algorithm": "Logistic Regression",
-    "trainedAt": "2026-04-13 21:50:33",
+    "trainedAt": "2026-04-16 14:38:00",
     "rowsCount": 3000,
-    "featuresCount": 34,
-    "threshold": 0.55,
-    "classWeight": "0:1, 1:5",
-    "useScaler": true,
+    "featuresCount": 24,
+    "threshold": 0.5,
+    "classWeight": "balanced",
+    "useScaler": false,
     "metrics": {
-      "accuracy": 0.7633,
-      "precision": 0.2961,
-      "recall": 0.5625,
-      "f1": 0.3879,
-      "rocAuc": 0.7467
+      "accuracy": 0.695,
+      "precision": 0.2679,
+      "recall": 0.6512,
+      "f1": 0.3797,
+      "rocAuc": 0.7007
     }
   },
   "catboost": {
     "trained": true,
     "algorithm": "CatBoost",
-    "trainedAt": "2026-04-13 10:15:43",
+    "trainedAt": "2026-04-16 14:09:26",
     "rowsCount": 3000,
     "featuresCount": 22,
-    "threshold": 0.25,
+    "threshold": 0.5,
     "classWeights": [
       1,
       3
@@ -30,10 +30,10 @@
     "useScaler": null,
     "penalty": null,
     "metrics": {
-      "accuracy": 0.69,
-      "precision": 0.25,
-      "recall": 0.5814,
-      "f1": 0.3497,
+      "accuracy": 0.82,
+      "precision": 0.3226,
+      "recall": 0.2326,
+      "f1": 0.2703,
       "rocAuc": 0.6948
     }
   }
