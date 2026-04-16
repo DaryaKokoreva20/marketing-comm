@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel
 
 
 class MetricsSchema(BaseModel):
@@ -10,27 +11,48 @@ class MetricsSchema(BaseModel):
     rocAuc: float
 
 
-class ModelStatusDataSchema(BaseModel):
+class BaseModelStatusDataSchema(BaseModel):
     trained: bool
     algorithm: Optional[str] = None
     trainedAt: Optional[str] = None
     rowsCount: Optional[int] = None
     featuresCount: Optional[int] = None
     threshold: Optional[float] = None
-    classWeight: Optional[str] = None
-    classWeights: Optional[list[int]] = None
-    useScaler: Optional[bool] = None
     metrics: Optional[MetricsSchema] = None
 
 
-class ModelStatusResponseSchema(BaseModel):
-    success: bool
-    data: ModelStatusDataSchema
+class LogisticModelStatusDataSchema(BaseModelStatusDataSchema):
+    classWeight: Optional[str] = None
+    useScaler: Optional[bool] = None
+    penalty: Optional[str] = None
 
 
-class TrainModelResponseSchema(BaseModel):
+class CatBoostModelStatusDataSchema(BaseModelStatusDataSchema):
+    classWeights: Optional[list[int]] = None
+    iterations: Optional[int] = None
+    learningRate: Optional[float] = None
+    depth: Optional[int] = None
+
+
+class LogisticModelStatusResponseSchema(BaseModel):
     success: bool
-    data: ModelStatusDataSchema
+    data: LogisticModelStatusDataSchema
+
+
+class CatBoostModelStatusResponseSchema(BaseModel):
+    success: bool
+    data: CatBoostModelStatusDataSchema
+
+
+class TrainLogisticModelResponseSchema(BaseModel):
+    success: bool
+    data: LogisticModelStatusDataSchema
+    message: str
+
+
+class TrainCatBoostModelResponseSchema(BaseModel):
+    success: bool
+    data: CatBoostModelStatusDataSchema
     message: str
 
 

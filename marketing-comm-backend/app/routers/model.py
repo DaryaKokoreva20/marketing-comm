@@ -3,8 +3,10 @@ from fastapi.responses import FileResponse
 import traceback
 
 from app.schemas.model import (
-    ModelStatusResponseSchema,
-    TrainModelResponseSchema,
+    LogisticModelStatusResponseSchema,
+    CatBoostModelStatusResponseSchema,
+    TrainLogisticModelResponseSchema,
+    TrainCatBoostModelResponseSchema,
     PredictResponseSchema,
 )
 from app.services.model_service import (
@@ -20,7 +22,7 @@ from app.services.model_service import (
 router = APIRouter(prefix="/api/model", tags=["model"])
 
 
-@router.get("/logistic/status", response_model=ModelStatusResponseSchema)
+@router.get("/logistic/status", response_model=LogisticModelStatusResponseSchema)
 def logistic_model_status():
     status = get_logistic_model_status()
     return {
@@ -29,7 +31,7 @@ def logistic_model_status():
     }
 
 
-@router.post("/logistic/train", response_model=TrainModelResponseSchema)
+@router.post("/logistic/train", response_model=TrainLogisticModelResponseSchema)
 def train_logistic_model(file: UploadFile = File(...)):
     try:
         result = train_logistic_model_from_file(file)
@@ -66,7 +68,7 @@ def predict_logistic(file: UploadFile = File(...)):
         )
 
 
-@router.get("/catboost/status", response_model=ModelStatusResponseSchema)
+@router.get("/catboost/status", response_model=CatBoostModelStatusResponseSchema)
 def catboost_model_status():
     status = get_catboost_model_status()
     return {
@@ -75,7 +77,7 @@ def catboost_model_status():
     }
 
 
-@router.post("/catboost/train", response_model=TrainModelResponseSchema)
+@router.post("/catboost/train", response_model=TrainCatBoostModelResponseSchema)
 def train_catboost_model(file: UploadFile = File(...)):
     try:
         result = train_catboost_model_from_file(file)
