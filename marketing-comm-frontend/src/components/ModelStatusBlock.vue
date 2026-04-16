@@ -19,9 +19,19 @@
       <p><strong>Количество строк:</strong> {{ modelStatus.rowsCount ?? '—' }}</p>
       <p><strong>Количество признаков:</strong> {{ modelStatus.featuresCount ?? '—' }}</p>
       <p><strong>Threshold:</strong> {{ modelStatus.threshold ?? '—' }}</p>
-      <p><strong>Class weighting:</strong> {{ formatClassWeights(modelStatus) ?? '—'}}</p>
-      <p><strong>Use scaler:</strong> {{ modelStatus.useScaler ?? '—' }}</p>
-      <p><strong>Penalty:</strong> {{ modelStatus.penalty ?? '—' }}</p>
+
+      <template v-if="modelType === 'logistic'">
+        <p><strong>Class weighting:</strong> {{ modelStatus.classWeight ?? '—' }}</p>
+        <p><strong>Use scaler:</strong> {{ formatNullable(modelStatus.useScaler) }}</p>
+        <p><strong>Penalty:</strong> {{ modelStatus.penalty ?? '—' }}</p>
+      </template>
+
+      <template v-else-if="modelType === 'catboost'">
+        <p><strong>Class weighting:</strong> {{ formatClassWeights(modelStatus) }}</p>
+        <p><strong>Iterations:</strong> {{ modelStatus.iterations ?? '—' }}</p>
+        <p><strong>Learning rate:</strong> {{ modelStatus.learningRate ?? '—' }}</p>
+        <p><strong>Depth:</strong> {{ modelStatus.depth ?? '—' }}</p>
+      </template>
 
       <div v-if="modelStatus.metrics" class="metrics-box">
         <h3>Метрики</h3>
@@ -55,22 +65,25 @@ export default {
       type: String,
       required: true,
     },
+    modelType: {
+      type: String,
+      required: true, // 'logistic' | 'catboost'
+    },
   },
   methods: {
     formatClassWeights(modelStatus) {
-      if (modelStatus.classWeights) {
-        return Array.isArray(modelStatus.classWeights)
-          ? modelStatus.classWeights.join(', ')
-          : modelStatus.classWeights
-      }
+      if (!modelStatus.classWeights) return '—'
 
-      if (modelStatus.classWeight) {
-        return modelStatus.classWeight
-      }
-
-      return '—'
+      return Array.isArray(modelStatus.classWeights)
+        ? modelStatus.classWeights.join(', ')
+        : modelStatus.classWeights
     },
-  }
+
+    formatNullable(value) {
+      if (value === null || value === undefined) return '—'
+      return value
+    },
+  },
 }
 </script>
 

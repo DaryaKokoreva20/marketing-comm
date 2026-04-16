@@ -37,6 +37,7 @@
         :isStatusLoading="isStatusLoading"
         :statusError="statusError"
         :modelLabel="selectedModelLabel"
+        :modelType="selectedModelType"
       />
 
       <PredictBlock
