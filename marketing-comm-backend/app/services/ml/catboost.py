@@ -1,5 +1,15 @@
-from catboost import CatBoostClassifier
+import itertools
+
 import pandas as pd
+from catboost import CatBoostClassifier
+
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    roc_auc_score,
+)
 
 from .config import (
     CATBOOST_MODEL_PATH,
@@ -7,20 +17,22 @@ from .config import (
     CATBOOST_FEATURES,
     THRESHOLD_CANDIDATES,
     MODEL_SELECTION_CONFIG,
+    CATBOOST_SEARCH_CONFIG,
 )
 
 
-CLASS_WEIGHTS_OPTIONS = [
-    None,
-    [1, 3],
-]
-
-
-def build_catboost_model(class_weights=None) -> CatBoostClassifier:
+def build_catboost_model(
+    iterations: int,
+    learning_rate: float,
+    depth: int,
+    l2_leaf_reg: float,
+    class_weights=None,
+) -> CatBoostClassifier:
     return CatBoostClassifier(
-        iterations=300,
-        learning_rate=0.05,
-        depth=6,
+        iterations=iterations,
+        learning_rate=learning_rate,
+        depth=depth,
+        l2_leaf_reg=l2_leaf_reg,
         loss_function="Logloss",
         eval_metric="AUC",
         verbose=False,
@@ -29,16 +41,12 @@ def build_catboost_model(class_weights=None) -> CatBoostClassifier:
     )
 
 
-def calculate_metrics_for_threshold(y_true: pd.Series, y_proba, threshold: float) -> dict:
+def calculate_metrics_for_threshold(
+    y_true: pd.Series,
+    y_proba,
+    threshold: float,
+) -> dict:
     y_pred = (y_proba >= threshold).astype(int)
-
-    from sklearn.metrics import (
-        accuracy_score,
-        precision_score,
-        recall_score,
-        f1_score,
-        roc_auc_score,
-    )
 
     return {
         "accuracy": round(float(accuracy_score(y_true, y_pred)), 4),
@@ -50,35 +58,85 @@ def calculate_metrics_for_threshold(y_true: pd.Series, y_proba, threshold: float
 
 
 def select_best_threshold(y_true: pd.Series, y_proba) -> tuple[float, dict]:
-    best_threshold = 0.5
-    best_metrics = None
-    best_f1 = -1.0
-    best_precision = -1.0
+    min_precision = MODEL_SELECTION_CONFIG["min_precision"]
+    min_recall = MODEL_SELECTION_CONFIG["min_recall"]
+    primary_metric = MODEL_SELECTION_CONFIG["primary_metric"]
+    secondary_metric = MODEL_SELECTION_CONFIG["secondary_metric"]
 
-    valid_candidates = []
+    threshold_results = []
 
     for threshold in THRESHOLD_CANDIDATES:
         metrics = calculate_metrics_for_threshold(y_true, y_proba, threshold)
+        threshold_results.append((threshold, metrics))
 
-        if metrics["precision"] >= MODEL_SELECTION_CONFIG["min_precision"]:
-            valid_candidates.append((threshold, metrics))
-
-    candidates_to_check = valid_candidates if valid_candidates else [
-        (threshold, calculate_metrics_for_threshold(y_true, y_proba, threshold))
-        for threshold in THRESHOLD_CANDIDATES
+    valid_candidates = [
+        (threshold, metrics)
+        for threshold, metrics in threshold_results
+        if metrics["precision"] >= min_precision and metrics["recall"] >= min_recall
     ]
 
+    candidates_to_check = valid_candidates if valid_candidates else threshold_results
+
+    best_threshold = None
+    best_metrics = None
+
     for threshold, metrics in candidates_to_check:
+        if best_metrics is None:
+            best_threshold = threshold
+            best_metrics = metrics
+            continue
+
+        if metrics[primary_metric] > best_metrics[primary_metric]:
+            best_threshold = threshold
+            best_metrics = metrics
+            continue
+
         if (
-            metrics["f1"] > best_f1 or
-            (metrics["f1"] == best_f1 and metrics["precision"] > best_precision)
+            metrics[primary_metric] == best_metrics[primary_metric]
+            and metrics[secondary_metric] > best_metrics[secondary_metric]
         ):
-            best_f1 = metrics["f1"]
-            best_precision = metrics["precision"]
+            best_threshold = threshold
+            best_metrics = metrics
+            continue
+
+        if (
+            metrics[primary_metric] == best_metrics[primary_metric]
+            and metrics[secondary_metric] == best_metrics[secondary_metric]
+            and metrics["rocAuc"] > best_metrics["rocAuc"]
+        ):
             best_threshold = threshold
             best_metrics = metrics
 
     return best_threshold, best_metrics
+
+
+def generate_catboost_param_combinations() -> list[dict]:
+    params_grid = CATBOOST_SEARCH_CONFIG["params"]
+    class_weights_options = CATBOOST_SEARCH_CONFIG["class_weights"]
+
+    keys = list(params_grid.keys())
+    values_product = itertools.product(*(params_grid[key] for key in keys))
+
+    combinations = []
+
+    for values in values_product:
+        base_params = dict(zip(keys, values))
+
+        for class_weights in class_weights_options:
+            combinations.append(
+                {
+                    "iterations": base_params["iterations"],
+                    "learning_rate": base_params["learning_rate"],
+                    "depth": base_params["depth"],
+                    "l2_leaf_reg": base_params["l2_leaf_reg"],
+                    "class_weights": class_weights,
+                }
+            )
+
+    if not combinations:
+        raise ValueError("Не найдено ни одной конфигурации CatBoost.")
+
+    return combinations
 
 
 def save_catboost_model(model: CatBoostClassifier) -> None:
@@ -90,9 +148,15 @@ def load_catboost_model() -> CatBoostClassifier:
     if not CATBOOST_MODEL_PATH.exists():
         raise FileNotFoundError("Файл обученной модели CatBoost не найден.")
 
-    model = build_catboost_model()
+    model = CatBoostClassifier()
     model.load_model(CATBOOST_MODEL_PATH)
     return model
+
+
+def serialize_class_weights(class_weights) -> list[int] | None:
+    if class_weights is None:
+        return None
+    return list(class_weights)
 
 
 def train_single_catboost_model(
@@ -100,9 +164,15 @@ def train_single_catboost_model(
     X_test: pd.DataFrame,
     y_train: pd.Series,
     y_test: pd.Series,
-    class_weights=None,
+    params: dict,
 ) -> dict:
-    model = build_catboost_model(class_weights=class_weights)
+    model = build_catboost_model(
+        iterations=params["iterations"],
+        learning_rate=params["learning_rate"],
+        depth=params["depth"],
+        l2_leaf_reg=params["l2_leaf_reg"],
+        class_weights=params["class_weights"],
+    )
 
     X_train = X_train.copy()
     X_test = X_test.copy()
@@ -129,7 +199,11 @@ def train_single_catboost_model(
         "model": model,
         "algorithm": "CatBoost",
         "threshold": best_threshold,
-        "classWeights": class_weights,
+        "classWeights": serialize_class_weights(params["class_weights"]),
+        "iterations": params["iterations"],
+        "learningRate": params["learning_rate"],
+        "depth": params["depth"],
+        "l2LeafReg": params["l2_leaf_reg"],
         "metrics": best_metrics,
     }
 
@@ -138,19 +212,28 @@ def is_better_result(candidate: dict, current_best: dict | None) -> bool:
     if current_best is None:
         return True
 
-    candidate_f1 = candidate["metrics"]["f1"]
-    current_f1 = current_best["metrics"]["f1"]
+    primary_metric = MODEL_SELECTION_CONFIG["primary_metric"]
+    secondary_metric = MODEL_SELECTION_CONFIG["secondary_metric"]
 
-    candidate_precision = candidate["metrics"]["precision"]
-    current_precision = current_best["metrics"]["precision"]
+    candidate_primary = candidate["metrics"][primary_metric]
+    current_primary = current_best["metrics"][primary_metric]
 
-    if candidate_f1 > current_f1:
+    if candidate_primary > current_primary:
         return True
 
-    if candidate_f1 == current_f1 and candidate_precision > current_precision:
+    if candidate_primary < current_primary:
+        return False
+
+    candidate_secondary = candidate["metrics"][secondary_metric]
+    current_secondary = current_best["metrics"][secondary_metric]
+
+    if candidate_secondary > current_secondary:
         return True
 
-    return False
+    if candidate_secondary < current_secondary:
+        return False
+
+    return candidate["metrics"]["rocAuc"] > current_best["metrics"]["rocAuc"]
 
 
 def train_catboost_model(
@@ -159,18 +242,33 @@ def train_catboost_model(
     y_train: pd.Series,
     y_test: pd.Series,
 ) -> dict:
+    param_combinations = generate_catboost_param_combinations()
+
     candidate_results = []
 
-    for class_weights in CLASS_WEIGHTS_OPTIONS:
-        candidate_results.append(
-            train_single_catboost_model(
-                X_train,
-                X_test,
-                y_train,
-                y_test,
-                class_weights=class_weights,
-            )
+    for params in param_combinations:
+        result = train_single_catboost_model(
+            X_train=X_train,
+            X_test=X_test,
+            y_train=y_train,
+            y_test=y_test,
+            params=params,
         )
+
+        print(
+            "CatBoost candidate:",
+            {
+                "classWeights": result["classWeights"],
+                "iterations": result["iterations"],
+                "learningRate": result["learningRate"],
+                "depth": result["depth"],
+                "l2LeafReg": result["l2LeafReg"],
+                "threshold": result["threshold"],
+                "metrics": result["metrics"],
+            }
+        )
+
+        candidate_results.append(result)
 
     best_result = None
 
@@ -184,6 +282,10 @@ def train_catboost_model(
         "algorithm": best_result["algorithm"],
         "threshold": best_result["threshold"],
         "classWeights": best_result["classWeights"],
+        "iterations": best_result["iterations"],
+        "learningRate": best_result["learningRate"],
+        "depth": best_result["depth"],
+        "l2LeafReg": best_result["l2LeafReg"],
         "metrics": best_result["metrics"],
     }
 

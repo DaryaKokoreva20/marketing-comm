@@ -136,6 +136,7 @@ def train_catboost_model_from_file(upload_file) -> dict:
         "iterations": training_result.get("iterations"),
         "learningRate": training_result.get("learningRate"),
         "depth": training_result.get("depth"),
+        "l2LeafReg": training_result["l2LeafReg"],
         "metrics": training_result["metrics"],
     }
 

@@ -49,6 +49,8 @@ def prepare_base_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     result_df = add_new_features(result_df)
     # result_df = add_polynomial_features(result_df)
 
+    result_df = add_catboost_interaction_features(result_df)
+
     if "comm_time" in result_df.columns:
         result_df = result_df.drop(columns=["comm_time"])
 
@@ -138,5 +140,36 @@ def add_polynomial_features(df: pd.DataFrame) -> pd.DataFrame:
 
         result_df[f"{col}_squared"] = normalized ** 2
         result_df[f"{col}_cubed"] = normalized ** 3
+
+    return result_df
+
+
+def add_catboost_interaction_features(df: pd.DataFrame) -> pd.DataFrame:
+    result_df = df.copy()
+
+    safe_tenure_days = result_df["tenure_days"].fillna(0)
+    safe_prev_comm_count_channel = result_df["prev_comm_count_channel"].fillna(0)
+    safe_prev_comm_response_rate_channel = result_df["prev_comm_response_rate_channel"].fillna(0)
+
+    if "channel_type" in result_df.columns and "scenario_type" in result_df.columns:
+        result_df["channel_scenario"] = (
+            result_df["channel_type"].fillna("").astype(str)
+            + "_"
+            + result_df["scenario_type"].fillna("").astype(str)
+        )
+
+    result_df["comm_intensity"] = (
+        safe_prev_comm_count_channel / (safe_tenure_days + 1)
+    )
+
+    result_df["channel_effectiveness"] = (
+        safe_prev_comm_response_rate_channel * safe_prev_comm_count_channel
+    )
+
+    comm_time = pd.to_datetime(result_df["comm_time"], errors="coerce")
+    hours = comm_time.dt.hour.fillna(0)
+
+    result_df["is_morning"] = ((hours >= 6) & (hours <= 11)).astype(int)
+    result_df["is_evening"] = ((hours >= 18) & (hours <= 23)).astype(int)
 
     return result_df

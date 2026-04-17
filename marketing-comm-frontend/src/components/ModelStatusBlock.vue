@@ -31,6 +31,7 @@
         <p><strong>Iterations:</strong> {{ modelStatus.iterations ?? '—' }}</p>
         <p><strong>Learning rate:</strong> {{ modelStatus.learningRate ?? '—' }}</p>
         <p><strong>Depth:</strong> {{ modelStatus.depth ?? '—' }}</p>
+        <p><strong>l2LeafReg:</strong> {{ modelStatus.l2LeafReg ?? '—' }}</p>
       </template>
 
       <div v-if="modelStatus.metrics" class="metrics-box">

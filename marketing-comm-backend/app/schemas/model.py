@@ -32,6 +32,7 @@ class CatBoostModelStatusDataSchema(BaseModelStatusDataSchema):
     iterations: Optional[int] = None
     learningRate: Optional[float] = None
     depth: Optional[int] = None
+    l2LeafReg: Optional[float] = None
 
 
 class LogisticModelStatusResponseSchema(BaseModel):
