@@ -83,10 +83,6 @@ def prepare_catboost_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     return result_df
 
 
-import numpy as np
-import pandas as pd
-
-
 def add_new_features(df: pd.DataFrame) -> pd.DataFrame:
     result_df = df.copy()
 

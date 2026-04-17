@@ -1,24 +1,26 @@
 from datetime import datetime
-import json
-import pandas as pd
 from pathlib import Path
-from uuid import uuid4
 
-from app.constants.model import (
-    AVAILABLE_CHANNELS,
-    AVAILABLE_SCENARIOS
-)
+import pandas as pd
+
 from app.services.ml import (
     train_logistic_regression_model,
     predict_logistic_probabilities,
     train_catboost_model,
     predict_catboost_probabilities,
 )
+from app.services.prediction_service import (
+    build_prediction_output_info,
+    expand_clients_with_all_channel_scenario_pairs,
+    apply_prediction_results,
+    save_prediction_results_to_excel,
+    build_prediction_response,
+)
 from app.utils.validation import (
     validate_train_dataframe,
     validate_predict_dataframe,
 )
-from app.utils.preprocessing import (
+from app.services.ml.preprocessing import (
     prepare_training_dataframe,
     prepare_prediction_dataframe,
     prepare_catboost_dataframe,
@@ -30,39 +32,6 @@ STORAGE_DIR = BASE_DIR / "storage"
 METADATA_PATH = STORAGE_DIR / "metadata.json"
 UPLOADS_DIR = STORAGE_DIR / "uploads"
 PREDICTIONS_DIR = STORAGE_DIR / "predictions"
-
-
-def read_metadata() -> dict:
-    with open(METADATA_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def write_metadata(data: dict) -> None:
-    with open(METADATA_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-
-def validate_file_extension(filename: str) -> None:
-    if not filename:
-        raise ValueError("Имя файла отсутствует.")
-
-    allowed_extensions = (".csv", ".xlsx")
-    if not filename.lower().endswith(allowed_extensions):
-        raise ValueError("Допустимы только файлы .csv и .xlsx.")
-
-
-def load_dataframe(file_path: Path) -> pd.DataFrame:
-    if file_path.suffix.lower() == ".csv":
-        return pd.read_csv(file_path)
-    if file_path.suffix.lower() == ".xlsx":
-        return pd.read_excel(file_path)
-
-    raise ValueError("Неподдерживаемый формат файла.")
-
-
-def save_uploaded_file(upload_file, destination: Path) -> None:
-    with open(destination, "wb") as f:
-        f.write(upload_file.file.read())
 
 
 def train_logistic_model_from_file(upload_file) -> dict:
@@ -169,61 +138,34 @@ def predict_logistic_from_file(upload_file) -> dict:
     df = load_dataframe(file_path)
     validate_predict_dataframe(df)
 
-    prediction_id = str(uuid4())
-    output_file_name = f"prediction_results_logistic_{prediction_id}.xlsx"
-    output_path = PREDICTIONS_DIR / output_file_name
-
-    base_df = df.copy()
-    base_df = base_df.reset_index(drop=True)
-    base_df["client_row_id"] = base_df.index + 1
-
-    expanded_rows = []
-
-    for _, row in base_df.iterrows():
-        row_dict = row.to_dict()
-
-        for channel in AVAILABLE_CHANNELS:
-            for scenario in AVAILABLE_SCENARIOS:
-                new_row = row_dict.copy()
-                new_row["channel_type"] = channel
-                new_row["scenario_type"] = scenario
-                expanded_rows.append(new_row)
-
-    result_df = pd.DataFrame(expanded_rows)
-    prediction_features_df = prepare_prediction_dataframe(result_df)
-
-    result_df["predicted_probability"] = predict_logistic_probabilities(prediction_features_df)
-
-    threshold = logistic_metadata.get("threshold")
-    if threshold is None:
-        threshold = 0.5
-
-    result_df["predicted_class"] = (
-        result_df["predicted_probability"] >= threshold
-    ).astype(int)
-
-    result_df = result_df.sort_values(
-        by=["client_row_id", "predicted_probability"],
-        ascending=[True, False]
-    ).reset_index(drop=True)
-
-    result_df["rank_within_client"] = (
-        result_df.groupby("client_row_id").cumcount() + 1
+    prediction_id, output_file_name, output_path = build_prediction_output_info(
+        model_name="logistic",
+        predictions_dir=PREDICTIONS_DIR,
     )
 
-    top_recommendations_df = result_df[result_df["rank_within_client"] == 1].copy()
+    result_df = expand_clients_with_all_channel_scenario_pairs(df)
+    prediction_features_df = prepare_prediction_dataframe(result_df)
 
-    with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
-        result_df.to_excel(writer, index=False, sheet_name="all_predictions")
-        top_recommendations_df.to_excel(writer, index=False, sheet_name="top_recommendations")
+    predicted_probabilities = predict_logistic_probabilities(prediction_features_df)
 
-    return {
-        "predictionId": prediction_id,
-        "fileName": output_file_name,
-        "rowsProcessed": int(len(df)),
-        "predictionsGenerated": int(len(result_df)),
-        "downloadUrl": f"/api/model/download-prediction/{prediction_id}"
-    }
+    all_predictions_df, top_recommendations_df = apply_prediction_results(
+        result_df=result_df,
+        predicted_probabilities=predicted_probabilities,
+        threshold=logistic_metadata.get("threshold"),
+    )
+
+    save_prediction_results_to_excel(
+        all_predictions_df=all_predictions_df,
+        top_recommendations_df=top_recommendations_df,
+        output_path=output_path,
+    )
+
+    return build_prediction_response(
+        prediction_id=prediction_id,
+        file_name=output_file_name,
+        rows_processed=int(len(df)),
+        predictions_generated=int(len(all_predictions_df)),
+    )
 
 
 def predict_catboost_from_file(upload_file) -> dict:
@@ -241,67 +183,31 @@ def predict_catboost_from_file(upload_file) -> dict:
     df = load_dataframe(file_path)
     validate_predict_dataframe(df)
 
-    prediction_id = str(uuid4())
-    output_file_name = f"prediction_results_catboost_{prediction_id}.xlsx"
-    output_path = PREDICTIONS_DIR / output_file_name
-
-    base_df = df.copy()
-    base_df = base_df.reset_index(drop=True)
-    base_df["client_row_id"] = base_df.index + 1
-
-    expanded_rows = []
-
-    for _, row in base_df.iterrows():
-        row_dict = row.to_dict()
-
-        for channel in AVAILABLE_CHANNELS:
-            for scenario in AVAILABLE_SCENARIOS:
-                new_row = row_dict.copy()
-                new_row["channel_type"] = channel
-                new_row["scenario_type"] = scenario
-                expanded_rows.append(new_row)
-
-    result_df = pd.DataFrame(expanded_rows)
-    prediction_features_df = prepare_catboost_dataframe(result_df)
-
-    result_df["predicted_probability"] = predict_catboost_probabilities(prediction_features_df)
-
-    threshold = catboost_metadata.get("threshold")
-    if threshold is None:
-        threshold = 0.5
-
-    result_df["predicted_class"] = (
-        result_df["predicted_probability"] >= threshold
-    ).astype(int)
-
-    result_df = result_df.sort_values(
-        by=["client_row_id", "predicted_probability"],
-        ascending=[True, False]
-    ).reset_index(drop=True)
-
-    result_df["rank_within_client"] = (
-        result_df.groupby("client_row_id").cumcount() + 1
+    prediction_id, output_file_name, output_path = build_prediction_output_info(
+        model_name="catboost",
+        predictions_dir=PREDICTIONS_DIR,
     )
 
-    top_recommendations_df = result_df[result_df["rank_within_client"] == 1].copy()
+    result_df = expand_clients_with_all_channel_scenario_pairs(df)
+    prediction_features_df = prepare_catboost_dataframe(result_df)
 
-    with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
-        result_df.to_excel(writer, index=False, sheet_name="all_predictions")
-        top_recommendations_df.to_excel(writer, index=False, sheet_name="top_recommendations")
+    predicted_probabilities = predict_catboost_probabilities(prediction_features_df)
 
-    return {
-        "predictionId": prediction_id,
-        "fileName": output_file_name,
-        "rowsProcessed": int(len(df)),
-        "predictionsGenerated": int(len(result_df)),
-        "downloadUrl": f"/api/model/download-prediction/{prediction_id}"
-    }
+    all_predictions_df, top_recommendations_df = apply_prediction_results(
+        result_df=result_df,
+        predicted_probabilities=predicted_probabilities,
+        threshold=catboost_metadata.get("threshold"),
+    )
 
+    save_prediction_results_to_excel(
+        all_predictions_df=all_predictions_df,
+        top_recommendations_df=top_recommendations_df,
+        output_path=output_path,
+    )
 
-def get_prediction_file_path(prediction_id: str) -> Path:
-    matching_files = list(PREDICTIONS_DIR.glob(f"*{prediction_id}.xlsx"))
-
-    if not matching_files:
-        raise FileNotFoundError("Файл результата не найден.")
-
-    return matching_files[0]
+    return build_prediction_response(
+        prediction_id=prediction_id,
+        file_name=output_file_name,
+        rows_processed=int(len(df)),
+        predictions_generated=int(len(all_predictions_df)),
+    )
