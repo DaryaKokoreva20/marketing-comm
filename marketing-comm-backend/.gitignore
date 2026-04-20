@@ -7,3 +7,4 @@ app/storage/predictions/*
 !app/storage/uploads/.gitkeep
 !app/storage/predictions/.gitkeep
 train.ipynb
+app/scripts/

@@ -1,10 +1,7 @@
 import json
-from pathlib import Path
 
+from app.core.paths import METADATA_PATH
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-STORAGE_DIR = BASE_DIR / "storage"
-METADATA_PATH = STORAGE_DIR / "metadata.json"
 
 def read_metadata() -> dict:
     with open(METADATA_PATH, "r", encoding="utf-8") as f:

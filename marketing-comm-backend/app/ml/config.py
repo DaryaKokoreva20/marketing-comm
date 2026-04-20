@@ -1,12 +1,3 @@
-from pathlib import Path
-
-
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-STORAGE_DIR = BASE_DIR / "storage"
-MODELS_DIR = STORAGE_DIR / "models"
-LOGISTIC_MODEL_PATH = MODELS_DIR / "logistic_regression_pipeline.joblib"
-CATBOOST_MODEL_PATH = MODELS_DIR / "catboost_model.cbm"
-
 THRESHOLD_CANDIDATES = [0.35, 0.4, 0.45, 0.50, 0.55]
 
 MODEL_SELECTION_CONFIG = {
@@ -23,20 +14,18 @@ TRAIN_TEST_SPLIT_CONFIG = {
 }
 
 LOGISTIC_SEARCH_CONFIG = {
-    "enabled": True,
     "params": {
         "class_weight": [
             None,
-            "balanced",
             {0: 1, 1: 3},
             {0: 1, 1: 5},
-            {0: 1, 1: 7},
         ],
         "use_scaler": [False, True],
-        "solver": ["liblinear"],
-        "max_iter": [3000, 5000],
-        "C": [0.3, 1.0, 3.0],
-    },
+        "learning_rate": [0.01, 0.05],
+        "max_iter": [1000, 3000, 5000],
+        "l2_lambda": [0.0, 0.01, 0.1],
+        "tolerance": [1e-6],
+    }
 }
 
 CATBOOST_SEARCH_CONFIG = {
@@ -127,4 +116,32 @@ CATBOOST_FEATURES = [
     "channel_effectiveness",
     "is_morning",
     "is_evening",
+]
+
+NON_NEGATIVE_NUMERIC_COLUMNS = [
+    "tenure_days",
+    "avg_order_value",
+    "order_frequency",
+    "total_orders",
+    "recency_days",
+    "prev_comm_count_channel",
+    "last_comm_days_channel",
+    "prev_comm_count_scenario",
+]
+
+RATIO_COLUMNS = [
+    "repeat_purchase_propensity",
+    "prev_response_rate",
+    "prev_comm_response_rate_channel",
+    "prev_comm_response_rate_scenario",
+    "promo_sensitivity",
+]
+
+TRAIN_BINARY_COLUMNS = [
+    "time_trigger",
+    "target",
+]
+
+PREDICT_BINARY_COLUMNS = [
+    "time_trigger",
 ]

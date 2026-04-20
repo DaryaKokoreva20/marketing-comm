@@ -6,63 +6,37 @@ from app.constants.model import (
     REQUIRED_TRAIN_COLUMNS,
     REQUIRED_PREDICT_COLUMNS,
 )
+from app.ml.config import (
+    NON_NEGATIVE_NUMERIC_COLUMNS, 
+    RATIO_COLUMNS,
+    TRAIN_BINARY_COLUMNS,
+    PREDICT_BINARY_COLUMNS
+)
 
 
 def validate_train_dataframe(df: pd.DataFrame) -> None:
     validate_required_columns(df, REQUIRED_TRAIN_COLUMNS, "обучающем")
     validate_not_empty(df, "Обучающий файл пуст.")
 
-    validate_client_type_column(df)
+    validate_common_dataframe(df)
     validate_channel_type_column(df)
     validate_scenario_type_column(df)
-    validate_industry_column(df)
-
-    validate_non_negative_numeric_column(df, "tenure_days")
-    validate_non_negative_numeric_column(df, "avg_order_value")
-    validate_non_negative_numeric_column(df, "order_frequency")
-    validate_non_negative_numeric_column(df, "total_orders")
-    validate_non_negative_numeric_column(df, "recency_days")
-    validate_non_negative_numeric_column(df, "prev_comm_count_channel")
-    validate_non_negative_numeric_column(df, "last_comm_days_channel")
-    validate_non_negative_numeric_column(df, "prev_comm_count_scenario")
-
-    validate_ratio_column(df, "repeat_purchase_propensity")
-    validate_ratio_column(df, "prev_response_rate")
-    validate_ratio_column(df, "prev_comm_response_rate_channel")
-    validate_ratio_column(df, "prev_comm_response_rate_scenario")
-    validate_ratio_column(df, "promo_sensitivity")
-
-    validate_binary_column(df, "time_trigger")
-    validate_binary_column(df, "target")
-
-    validate_b2c_age_column(df)
-    validate_comm_time_column(df)
+    validate_binary_columns(df, TRAIN_BINARY_COLUMNS)
 
 
 def validate_predict_dataframe(df: pd.DataFrame) -> None:
     validate_required_columns(df, REQUIRED_PREDICT_COLUMNS, "файле для прогнозирования")
     validate_not_empty(df, "Файл для прогнозирования пуст.")
 
+    validate_common_dataframe(df)
+    validate_binary_columns(df, PREDICT_BINARY_COLUMNS)
+
+
+def validate_common_dataframe(df: pd.DataFrame) -> None:
     validate_client_type_column(df)
     validate_industry_column(df)
-
-    validate_non_negative_numeric_column(df, "tenure_days")
-    validate_non_negative_numeric_column(df, "avg_order_value")
-    validate_non_negative_numeric_column(df, "order_frequency")
-    validate_non_negative_numeric_column(df, "total_orders")
-    validate_non_negative_numeric_column(df, "recency_days")
-    validate_non_negative_numeric_column(df, "prev_comm_count_channel")
-    validate_non_negative_numeric_column(df, "last_comm_days_channel")
-    validate_non_negative_numeric_column(df, "prev_comm_count_scenario")
-
-    validate_ratio_column(df, "repeat_purchase_propensity")
-    validate_ratio_column(df, "prev_response_rate")
-    validate_ratio_column(df, "prev_comm_response_rate_channel")
-    validate_ratio_column(df, "prev_comm_response_rate_scenario")
-    validate_ratio_column(df, "promo_sensitivity")
-
-    validate_binary_column(df, "time_trigger")
-
+    validate_non_negative_numeric_columns(df, NON_NEGATIVE_NUMERIC_COLUMNS)
+    validate_ratio_columns(df, RATIO_COLUMNS)
     validate_b2c_age_column(df)
     validate_comm_time_column(df)
 
@@ -80,7 +54,11 @@ def validate_not_empty(df: pd.DataFrame, error_message: str) -> None:
         raise ValueError(error_message)
 
 
-def validate_numeric_column(df: pd.DataFrame, column_name: str, allow_null: bool = False) -> pd.Series:
+def validate_numeric_column(
+    df: pd.DataFrame,
+    column_name: str,
+    allow_null: bool = False,
+) -> pd.Series:
     series = df[column_name]
 
     if not allow_null and series.isnull().any():
@@ -106,11 +84,21 @@ def validate_non_negative_numeric_column(df: pd.DataFrame, column_name: str) -> 
         raise ValueError(f"Колонка {column_name} не должна содержать отрицательные значения.")
 
 
+def validate_non_negative_numeric_columns(df: pd.DataFrame, column_names: list[str]) -> None:
+    for column_name in column_names:
+        validate_non_negative_numeric_column(df, column_name)
+
+
 def validate_ratio_column(df: pd.DataFrame, column_name: str) -> None:
     converted = validate_numeric_column(df, column_name)
 
     if ((converted < 0) | (converted > 1)).any():
         raise ValueError(f"Колонка {column_name} должна содержать значения в диапазоне от 0 до 1.")
+
+
+def validate_ratio_columns(df: pd.DataFrame, column_names: list[str]) -> None:
+    for column_name in column_names:
+        validate_ratio_column(df, column_name)
 
 
 def validate_binary_column(df: pd.DataFrame, column_name: str) -> None:
@@ -120,13 +108,20 @@ def validate_binary_column(df: pd.DataFrame, column_name: str) -> None:
         raise ValueError(f"Колонка {column_name} должна содержать только значения 0 и 1.")
 
 
+def validate_binary_columns(df: pd.DataFrame, column_names: list[str]) -> None:
+    for column_name in column_names:
+        validate_binary_column(df, column_name)
+
+
 def validate_allowed_values(df: pd.DataFrame, column_name: str, allowed_values: list[str]) -> None:
     series = df[column_name]
 
     if series.isnull().any():
         raise ValueError(f"Колонка {column_name} содержит пустые значения.")
 
-    invalid_values = set(series.astype(str)) - set(allowed_values)
+    normalized_values = series.astype(str).str.strip()
+    invalid_values = set(normalized_values) - set(allowed_values)
+
     if invalid_values:
         raise ValueError(
             f"Колонка {column_name} содержит недопустимые значения: {', '.join(sorted(invalid_values))}"
@@ -180,5 +175,10 @@ def validate_comm_time_column(df: pd.DataFrame) -> None:
     if series.isnull().any():
         raise ValueError("Колонка comm_time содержит пустые значения.")
 
-    if (series.astype(str).str.strip() == "").any():
+    stripped_series = series.astype(str).str.strip()
+    if (stripped_series == "").any():
         raise ValueError("Колонка comm_time содержит пустые строки.")
+
+    parsed_series = pd.to_datetime(stripped_series, errors="coerce")
+    if parsed_series.isnull().any():
+        raise ValueError("Колонка comm_time должна содержать корректные значения времени или даты-времени.")

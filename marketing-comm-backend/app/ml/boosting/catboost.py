@@ -1,15 +1,17 @@
 import pandas as pd
 from catboost import CatBoostClassifier
 
-from .config import (
-    CATBOOST_MODEL_PATH,
+from app.core.paths import CATBOOST_MODEL_PATH
+from ..config import (
     CATEGORICAL_FEATURES,
     CATBOOST_FEATURES,
     CATBOOST_SEARCH_CONFIG,
+    TRAIN_TEST_SPLIT_CONFIG,
 )
-from .evaluation import select_best_threshold, is_better_result
-from .search import generate_param_combinations
-from .serialization import serialize_class_weights
+from ..evaluation import select_best_threshold, is_better_result
+from ..search import generate_param_combinations
+from ..serialization import serialize_class_weights
+from sklearn.model_selection import train_test_split
 
 
 def build_catboost_model(
@@ -81,12 +83,18 @@ def train_single_catboost_model(
     }
 
 
-def train_catboost_model(
-    X_train: pd.DataFrame,
-    X_test: pd.DataFrame,
-    y_train: pd.Series,
-    y_test: pd.Series,
-) -> dict:
+def train_catboost_model(X: pd.DataFrame, y: pd.Series) -> dict:
+    split_config = TRAIN_TEST_SPLIT_CONFIG.copy()
+    stratify_value = y if split_config.get("stratify", False) else None
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=split_config["test_size"],
+        random_state=split_config["random_state"],
+        stratify=stratify_value,
+    )
+
     param_combinations = generate_catboost_param_combinations()
 
     candidate_results = []

@@ -1,10 +1,7 @@
 import pandas as pd
 from pathlib import Path
 
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-STORAGE_DIR = BASE_DIR / "storage"
-PREDICTIONS_DIR = STORAGE_DIR / "predictions"
+from app.core.paths import PREDICTIONS_DIR
 
 
 def validate_file_extension(filename: str) -> None:

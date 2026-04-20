@@ -9,18 +9,18 @@ from app.schemas.model import (
     TrainCatBoostModelResponseSchema,
     PredictResponseSchema,
 )
-from app.services.model_service import (
-    get_logistic_model_status,
-    get_catboost_model_status,
+from app.services.ml_service import (
     train_logistic_model_from_file,
     train_catboost_model_from_file,
+    get_logistic_model_status,
+    get_catboost_model_status,
     predict_logistic_from_file,
     predict_catboost_from_file,
-    get_prediction_file_path,
 )
+from app.services.file_service import get_prediction_file_path
+
 
 router = APIRouter(prefix="/api/model", tags=["model"])
-
 
 @router.get("/logistic/status", response_model=LogisticModelStatusResponseSchema)
 def logistic_model_status():

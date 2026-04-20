@@ -1,0 +1,46 @@
+{
+  "logistic": {
+    "trained": true,
+    "algorithm": "Custom Logistic Regression",
+    "trainedAt": "2026-04-20 21:42:09",
+    "rowsCount": 3000,
+    "featuresCount": 29,
+    "threshold": 0.45,
+    "classWeight": "0:1, 1:5",
+    "useScaler": true,
+    "learningRate": 0.05,
+    "maxIter": 3000,
+    "l2Lambda": 0.1,
+    "tolerance": 1e-06,
+    "metrics": {
+      "accuracy": 0.7,
+      "precision": 0.2718,
+      "recall": 0.6512,
+      "f1": 0.3836,
+      "rocAuc": 0.7014
+    }
+  },
+  "catboost": {
+    "trained": true,
+    "algorithm": "CatBoost",
+    "trainedAt": "2026-04-20 21:45:10",
+    "rowsCount": 3000,
+    "featuresCount": 27,
+    "threshold": 0.45,
+    "classWeights": [
+      1,
+      7
+    ],
+    "iterations": 800,
+    "learningRate": 0.03,
+    "depth": 5,
+    "l2LeafReg": 5,
+    "metrics": {
+      "accuracy": 0.7483,
+      "precision": 0.2903,
+      "recall": 0.5233,
+      "f1": 0.3734,
+      "rocAuc": 0.6853
+    }
+  }
+}
