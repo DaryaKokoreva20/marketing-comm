@@ -89,6 +89,7 @@ def train_logistic_model_from_file(upload_file) -> dict:
         "maxIter": training_result["maxIter"],
         "l2Lambda": training_result["l2Lambda"],
         "tolerance": training_result["tolerance"],
+        "mergeRareCategories": training_result["mergeRareCategories"],
         "metrics": training_result["metrics"],
     }
 

@@ -13,6 +13,11 @@ TRAIN_TEST_SPLIT_CONFIG = {
     "stratify": True,
 }
 
+ONE_HOT_CONFIG = {
+    "rare_category_columns": ["industry_category", "channel_scenario"],
+    "min_frequency": 10,
+}
+
 LOGISTIC_SEARCH_CONFIG = {
     "params": {
         "class_weight": [
@@ -25,6 +30,7 @@ LOGISTIC_SEARCH_CONFIG = {
         "max_iter": [1000, 3000, 5000],
         "l2_lambda": [0.0, 0.01, 0.1],
         "tolerance": [1e-6],
+        "merge_rare_categories": [False, True]
     }
 }
 

@@ -24,6 +24,7 @@ class LogisticModelStatusDataSchema(BaseModelStatusDataSchema):
     classWeight: Optional[str] = None
     useScaler: Optional[bool] = None
     penalty: Optional[str] = None
+    mergeRareCategories: bool | None = None
 
 
 class CatBoostModelStatusDataSchema(BaseModelStatusDataSchema):

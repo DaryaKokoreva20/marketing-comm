@@ -2,22 +2,23 @@
   "logistic": {
     "trained": true,
     "algorithm": "Custom Logistic Regression",
-    "trainedAt": "2026-04-20 21:42:09",
-    "rowsCount": 3000,
+    "trainedAt": "2026-04-22 11:49:51",
+    "rowsCount": 2000,
     "featuresCount": 29,
-    "threshold": 0.45,
-    "classWeight": "0:1, 1:5",
+    "threshold": 0.5,
+    "classWeight": "0:1, 1:3",
     "useScaler": true,
-    "learningRate": 0.05,
-    "maxIter": 3000,
-    "l2Lambda": 0.1,
+    "learningRate": 0.01,
+    "maxIter": 5000,
+    "l2Lambda": 0.0,
     "tolerance": 1e-06,
+    "mergeRareCategories": false,
     "metrics": {
-      "accuracy": 0.7,
-      "precision": 0.2718,
-      "recall": 0.6512,
-      "f1": 0.3836,
-      "rocAuc": 0.7014
+      "accuracy": 0.63,
+      "precision": 0.3833,
+      "recall": 0.6509,
+      "f1": 0.4825,
+      "rocAuc": 0.6666
     }
   },
   "catboost": {
