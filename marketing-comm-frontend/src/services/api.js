@@ -2,7 +2,7 @@ import axios from 'axios'
 
 const api = axios.create({
   baseURL: 'http://127.0.0.1:8000',
-  timeout: 600000,
+  timeout: 6000000,
 })
 
 function extractErrorMessage(error) {
@@ -22,8 +22,8 @@ function extractErrorMessage(error) {
 }
 
 function getModelBasePath(modelType) {
-  if (modelType === 'catboost') {
-    return '/api/model/catboost'
+  if (modelType === 'boosting') {
+    return '/api/model/boosting'
   }
 
   return '/api/model/logistic'

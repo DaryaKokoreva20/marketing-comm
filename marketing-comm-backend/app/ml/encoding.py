@@ -1,7 +1,5 @@
 from __future__ import annotations
-
 from typing import Any
-
 import pandas as pd
 
 
@@ -25,7 +23,6 @@ def replace_rare_categories(
 ) -> pd.Series:
     """
     Объединяет редкие категории в общее значение other_category.
-
     Категория считается редкой, если встречается реже min_frequency раз.
     """
     normalized = normalize_categorical_series(series)
@@ -45,6 +42,9 @@ def _should_merge_rare_categories(
     merge_rare_categories: bool,
     rare_category_columns: list[str],
 ) -> bool:
+    """
+    Проверяет, нужно ли для данного столбца объединять редкие категории.
+    """
     return merge_rare_categories and column_name in rare_category_columns
 
 
@@ -56,6 +56,10 @@ def _prepare_series_for_fit(
     min_frequency: int,
     other_category: str,
 ) -> pd.Series:
+    """
+    Подготавливает столбец на этапе обучения: 
+    нормализует и, если нужно, заменяет редкие категории на "other".
+    """
     normalized = normalize_categorical_series(series)
 
     if _should_merge_rare_categories(
@@ -77,6 +81,10 @@ def _prepare_series_for_transform(
     column_name: str,
     encoder_mapping: dict[str, Any],
 ) -> pd.Series:
+    """
+    Подготавливает столбец на этапе прогнозирования 
+    с использованием сохраненной схемы.
+    """
     normalized = normalize_categorical_series(series)
 
     categories = encoder_mapping["categories"][column_name]
@@ -199,8 +207,7 @@ def fit_transform_one_hot(
     drop_original_columns: bool = True,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     """
-    Удобная функция для обучения кодировщика и немедленного применения
-    к обучающему DataFrame.
+    Функция для обучения кодировщика и применения к обучающему DataFrame.
     """
     encoder_mapping = fit_one_hot_encoder(
         df=df,
@@ -226,7 +233,6 @@ def align_feature_columns(
 ) -> pd.DataFrame:
     """
     Приводит DataFrame к фиксированному набору признаков и их порядку.
-
     - если какого-то столбца нет, он добавляется и заполняется нулями
     - лишние столбцы удаляются
     - итоговый порядок столбцов совпадает с feature_columns

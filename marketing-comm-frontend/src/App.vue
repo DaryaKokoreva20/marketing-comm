@@ -21,7 +21,7 @@
         @change="handleModelChange"
       >
         <option value="logistic">Logistic Regression</option>
-        <option value="catboost">CatBoost</option>
+        <option value="boosting">Gradient Boosting</option>
       </select>
     </section>
 
@@ -74,8 +74,8 @@ export default {
   },
   computed: {
     selectedModelLabel() {
-      return this.selectedModelType === 'catboost'
-        ? 'CatBoost'
+      return this.selectedModelType === 'boosting'
+        ? 'Gradient Boosting'
         : 'Logistic Regression'
     },
     isModelReady() {

@@ -21,27 +21,27 @@
       "rocAuc": 0.6666
     }
   },
-  "catboost": {
+  "boosting": {
     "trained": true,
-    "algorithm": "CatBoost",
-    "trainedAt": "2026-04-20 21:45:10",
-    "rowsCount": 3000,
+    "algorithm": "Custom Gradient Boosting",
+    "trainedAt": "2026-04-22 13:01:21",
+    "rowsCount": 2000,
     "featuresCount": 27,
     "threshold": 0.45,
     "classWeights": [
       1,
-      7
+      3
     ],
     "iterations": 800,
-    "learningRate": 0.03,
-    "depth": 5,
-    "l2LeafReg": 5,
+    "learningRate": 0.01,
+    "depth": 4,
+    "l2LeafReg": 3,
     "metrics": {
-      "accuracy": 0.7483,
-      "precision": 0.2903,
-      "recall": 0.5233,
-      "f1": 0.3734,
-      "rocAuc": 0.6853
+      "accuracy": 0.5725,
+      "precision": 0.343,
+      "recall": 0.6698,
+      "f1": 0.4537,
+      "rocAuc": 0.6367
     }
   }
 }

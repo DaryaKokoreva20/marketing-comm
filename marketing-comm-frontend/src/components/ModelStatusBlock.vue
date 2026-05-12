@@ -26,7 +26,7 @@
         <p><strong>Penalty:</strong> {{ modelStatus.penalty ?? '—' }}</p>
       </template>
 
-      <template v-else-if="modelType === 'catboost'">
+      <template v-else-if="modelType === 'boosting'">
         <p><strong>Class weighting:</strong> {{ formatClassWeights(modelStatus) }}</p>
         <p><strong>Iterations:</strong> {{ modelStatus.iterations ?? '—' }}</p>
         <p><strong>Learning rate:</strong> {{ modelStatus.learningRate ?? '—' }}</p>
@@ -68,7 +68,7 @@ export default {
     },
     modelType: {
       type: String,
-      required: true, // 'logistic' | 'catboost'
+      required: true, // 'logistic' | 'boosting'
     },
   },
   methods: {

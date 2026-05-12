@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from app.constants.model import NUMERIC_COLUMNS, TRAIN_TARGET_COLUMN
-from .config import CATEGORICAL_FEATURES, CATBOOST_FEATURES
+from .config import CATEGORICAL_FEATURES, BOOSTING_FEATURES
 
 
 def convert_numeric_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -120,11 +120,11 @@ def prepare_prediction_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     return prepare_base_dataframe(df)
 
 
-def prepare_catboost_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+def prepare_boosting_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     result_df = prepare_base_dataframe(df)
 
     for column in CATEGORICAL_FEATURES:
         if column in result_df.columns:
             result_df[column] = result_df[column].fillna("").astype(str)
 
-    return result_df[CATBOOST_FEATURES]
+    return result_df[BOOSTING_FEATURES]

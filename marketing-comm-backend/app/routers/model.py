@@ -4,18 +4,18 @@ import traceback
 
 from app.schemas.model import (
     LogisticModelStatusResponseSchema,
-    CatBoostModelStatusResponseSchema,
+    BoostingModelStatusResponseSchema,
     TrainLogisticModelResponseSchema,
-    TrainCatBoostModelResponseSchema,
+    TrainBoostingModelResponseSchema,
     PredictResponseSchema,
 )
 from app.services.ml_service import (
     train_logistic_model_from_file,
-    train_catboost_model_from_file,
+    train_boosting_model_from_file,
     get_logistic_model_status,
-    get_catboost_model_status,
+    get_boosting_model_status,
     predict_logistic_from_file,
-    predict_catboost_from_file,
+    predict_boosting_from_file,
 )
 from app.services.file_service import get_prediction_file_path
 
@@ -68,23 +68,23 @@ def predict_logistic(file: UploadFile = File(...)):
         )
 
 
-@router.get("/catboost/status", response_model=CatBoostModelStatusResponseSchema)
-def catboost_model_status():
-    status = get_catboost_model_status()
+@router.get("/boosting/status", response_model=BoostingModelStatusResponseSchema)
+def boosting_model_status():
+    status = get_boosting_model_status()
     return {
         "success": True,
         "data": status,
     }
 
 
-@router.post("/catboost/train", response_model=TrainCatBoostModelResponseSchema)
-def train_catboost_model(file: UploadFile = File(...)):
+@router.post("/boosting/train", response_model=TrainBoostingModelResponseSchema)
+def train_boosting_model(file: UploadFile = File(...)):
     try:
-        result = train_catboost_model_from_file(file)
+        result = train_boosting_model_from_file(file)
         return {
             "success": True,
             "data": result,
-            "message": "Модель CatBoost успешно обучена.",
+            "message": "Модель бустинга успешно обучена.",
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -96,14 +96,14 @@ def train_catboost_model(file: UploadFile = File(...)):
         )
 
 
-@router.post("/catboost/predict", response_model=PredictResponseSchema)
-def predict_catboost(file: UploadFile = File(...)):
+@router.post("/boosting/predict", response_model=PredictResponseSchema)
+def predict_boosting(file: UploadFile = File(...)):
     try:
-        result = predict_catboost_from_file(file)
+        result = predict_boosting_from_file(file)
         return {
             "success": True,
             "data": result,
-            "message": "Прогноз для модели CatBoost успешно рассчитан.",
+            "message": "Прогноз для модели бустинга успешно рассчитан.",
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

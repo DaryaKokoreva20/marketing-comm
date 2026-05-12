@@ -9,4 +9,4 @@ PREDICTIONS_DIR = STORAGE_DIR / "predictions"
 METADATA_PATH = STORAGE_DIR / "metadata.json"
 
 LOGISTIC_MODEL_PATH = MODELS_DIR / "logistic_regression_pipeline.joblib"
-CATBOOST_MODEL_PATH = MODELS_DIR / "catboost_model.cbm"
+BOOSTING_MODEL_PATH = MODELS_DIR / "gradient_boosting_pipeline.joblib"

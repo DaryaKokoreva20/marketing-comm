@@ -4,7 +4,7 @@ from .logistic.logistic import (
     get_logistic_feature_coefficients,
 )
 
-from .boosting.catboost import (
-    train_catboost_model,
-    predict_catboost_probabilities,
+from .boosting.boosting import (
+    train_cboosting_model,
+    predict_boosting_probabilities,
 )

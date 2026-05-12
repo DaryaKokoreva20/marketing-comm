@@ -34,18 +34,19 @@ LOGISTIC_SEARCH_CONFIG = {
     }
 }
 
-CATBOOST_SEARCH_CONFIG = {
+BOOSTING_SEARCH_CONFIG = {
     "enabled": True,
     "class_weights": [
         [1, 3],
-        [1, 5],
-        [1, 7],
+        # [1, 5],
+        # [1, 7],
     ],
     "params": {
-        "iterations": [500, 800, 1200], 
-        "learning_rate": [0.01, 0.03],
-        "depth": [4, 5],
-        "l2_leaf_reg": [3, 5, 7], 
+        "iterations": [800], # [500, 800, 1200],
+        "learning_rate": [0.01], # 0.03
+        "depth": [4], # 5
+        "l2_leaf_reg": [3], # 5, 7
+        "merge_rare_categories": [False], # True
     },
 }
 
@@ -94,7 +95,7 @@ CATEGORICAL_FEATURES = [
     "channel_scenario",
 ]
 
-CATBOOST_FEATURES = [
+BOOSTING_FEATURES = [
     "client_type",
     "tenure_days",
     "avg_order_value",

@@ -27,7 +27,7 @@ class LogisticModelStatusDataSchema(BaseModelStatusDataSchema):
     mergeRareCategories: bool | None = None
 
 
-class CatBoostModelStatusDataSchema(BaseModelStatusDataSchema):
+class BoostingModelStatusDataSchema(BaseModelStatusDataSchema):
     classWeights: Optional[list[int]] = None
     iterations: Optional[int] = None
     learningRate: Optional[float] = None
@@ -40,9 +40,9 @@ class LogisticModelStatusResponseSchema(BaseModel):
     data: LogisticModelStatusDataSchema
 
 
-class CatBoostModelStatusResponseSchema(BaseModel):
+class BoostingModelStatusResponseSchema(BaseModel):
     success: bool
-    data: CatBoostModelStatusDataSchema
+    data: BoostingModelStatusDataSchema
 
 
 class TrainLogisticModelResponseSchema(BaseModel):
@@ -51,9 +51,9 @@ class TrainLogisticModelResponseSchema(BaseModel):
     message: str
 
 
-class TrainCatBoostModelResponseSchema(BaseModel):
+class TrainBoostingModelResponseSchema(BaseModel):
     success: bool
-    data: CatBoostModelStatusDataSchema
+    data: BoostingModelStatusDataSchema
     message: str
 
 

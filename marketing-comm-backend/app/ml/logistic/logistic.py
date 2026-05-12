@@ -120,6 +120,20 @@ def train_logistic_regression_model(X: pd.DataFrame, y: pd.Series) -> dict:
     return extract_logistic_model_summary(best_result)
 
 
+def generate_logistic_param_combinations() -> list[dict]:
+    raw_combinations = generate_param_combinations(LOGISTIC_SEARCH_CONFIG["params"])
+
+    combinations = [
+        normalize_logistic_params(raw_params)
+        for raw_params in raw_combinations
+    ]
+
+    if not combinations:
+        raise ValueError("Не найдено ни одной конфигурации логистической регрессии.")
+
+    return combinations
+
+
 def save_logistic_model(model: CustomLogisticPipeline) -> None:
     LOGISTIC_MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, LOGISTIC_MODEL_PATH)
@@ -148,20 +162,6 @@ def normalize_logistic_params(raw_params: dict) -> dict:
         "tolerance": raw_params["tolerance"],
         "merge_rare_categories": raw_params["merge_rare_categories"],
     }
-
-
-def generate_logistic_param_combinations() -> list[dict]:
-    raw_combinations = generate_param_combinations(LOGISTIC_SEARCH_CONFIG["params"])
-
-    combinations = [
-        normalize_logistic_params(raw_params)
-        for raw_params in raw_combinations
-    ]
-
-    if not combinations:
-        raise ValueError("Не найдено ни одной конфигурации логистической регрессии.")
-
-    return combinations
 
 
 def get_logistic_feature_coefficients() -> pd.DataFrame:

@@ -8,14 +8,14 @@ from app.ml.logistic.logistic import (
     train_logistic_regression_model,
     predict_logistic_probabilities
 )
-from app.ml.boosting.catboost import (
-    train_catboost_model,
-    predict_catboost_probabilities,
+from app.ml.boosting.boosting import (
+    train_boosting_model,
+    predict_boosting_probabilities,
 )
 from app.ml.preprocessing import (
     prepare_training_dataframe,
     prepare_prediction_dataframe,
-    prepare_catboost_dataframe,
+    prepare_boosting_dataframe,
 )
 from app.ml.validation import (
     validate_train_dataframe,
@@ -96,16 +96,16 @@ def train_logistic_model_from_file(upload_file) -> dict:
     return save_model_metadata("logistic", logistic_metadata)
 
 
-def train_catboost_model_from_file(upload_file) -> dict:
+def train_boosting_model_from_file(upload_file) -> dict:
     df = load_uploaded_dataframe(upload_file)
     validate_train_dataframe(df)
 
-    X = prepare_catboost_dataframe(df)
+    X = prepare_boosting_dataframe(df)
     y = pd.to_numeric(df["target"], errors="coerce")
 
-    training_result = train_catboost_model(X, y)
+    training_result = train_boosting_model(X, y)
 
-    catboost_metadata = {
+    boosting_metadata = {
         "trained": True,
         "algorithm": training_result["algorithm"],
         "trainedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -120,15 +120,15 @@ def train_catboost_model_from_file(upload_file) -> dict:
         "metrics": training_result["metrics"],
     }
 
-    return save_model_metadata("catboost", catboost_metadata)
+    return save_model_metadata("boosting", boosting_metadata)
 
 
 def get_logistic_model_status() -> dict:
     return get_model_status("logistic")
 
 
-def get_catboost_model_status() -> dict:
-    return get_model_status("catboost")
+def get_boosting_model_status() -> dict:
+    return get_model_status("boosting")
 
 
 def predict_from_file(
@@ -184,12 +184,12 @@ def predict_logistic_from_file(upload_file) -> dict:
     )
 
 
-def predict_catboost_from_file(upload_file) -> dict:
+def predict_boosting_from_file(upload_file) -> dict:
     return predict_from_file(
         upload_file=upload_file,
-        model_key="catboost",
-        model_name="catboost",
-        prepare_features_func=prepare_catboost_dataframe,
-        predict_probabilities_func=predict_catboost_probabilities,
-        model_not_trained_message="Модель CatBoost еще не обучена.",
+        model_key="boosting",
+        model_name="boosting",
+        prepare_features_func=prepare_boosting_dataframe,
+        predict_probabilities_func=predict_boosting_probabilities,
+        model_not_trained_message="Модель бустинга еще не обучена.",
     )
