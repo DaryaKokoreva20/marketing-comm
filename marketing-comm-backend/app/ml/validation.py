@@ -5,6 +5,7 @@ from app.constants.model import (
     AVAILABLE_SCENARIOS,
     REQUIRED_TRAIN_COLUMNS,
     REQUIRED_PREDICT_COLUMNS,
+    TRAIN_TARGET_COLUMN,
 )
 from app.ml.config import (
     NON_NEGATIVE_NUMERIC_COLUMNS, 
@@ -26,6 +27,11 @@ def validate_train_dataframe(df: pd.DataFrame) -> None:
 
 def validate_predict_dataframe(df: pd.DataFrame) -> None:
     validate_required_columns(df, REQUIRED_PREDICT_COLUMNS, "файле для прогнозирования")
+    validate_forbidden_columns(
+        df=df,
+        forbidden_columns={TRAIN_TARGET_COLUMN, "channel_type", "scenario_type"},
+        file_label="файле для прогнозирования",
+    )
     validate_not_empty(df, "Файл для прогнозирования пуст.")
 
     validate_common_dataframe(df)
@@ -48,6 +54,21 @@ def validate_required_columns(df: pd.DataFrame, required_columns: set, file_labe
             f"В {file_label} отсутствуют обязательные колонки: {', '.join(sorted(missing_columns))}"
         )
 
+
+def validate_forbidden_columns(
+    df: pd.DataFrame,
+    forbidden_columns: set[str],
+    file_label: str,
+) -> None:
+    existing_forbidden_columns = forbidden_columns & set(df.columns)
+
+    if existing_forbidden_columns:
+        raise ValueError(
+            f"В {file_label} не должно быть колонок: "
+            f"{', '.join(sorted(existing_forbidden_columns))}. "
+            "Похоже, загружен файл для обучения, а не файл для прогнозирования."
+        )
+    
 
 def validate_not_empty(df: pd.DataFrame, error_message: str) -> None:
     if df.empty:

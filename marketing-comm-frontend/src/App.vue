@@ -103,9 +103,9 @@ export default {
       await this.loadModelStatus()
     },
 
-    handleTrainSuccess(payload) {
-      this.modelStatus = payload
+    async handleTrainSuccess() {
       this.statusError = ''
+      await this.loadModelStatus()
     },
 
     handlePredictSuccess(payload) {

@@ -79,6 +79,7 @@ class CustomLogisticPipeline:
             merge_rare_categories=self.merge_rare_categories,
             rare_category_columns=ONE_HOT_CONFIG["rare_category_columns"],
             min_frequency=ONE_HOT_CONFIG["min_frequency"],
+            drop_first=ONE_HOT_CONFIG["drop_first"],
         )
 
         # масштабируем, если включено

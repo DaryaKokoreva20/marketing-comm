@@ -21,6 +21,23 @@ def convert_numeric_columns(df: pd.DataFrame) -> pd.DataFrame:
     return result_df
 
 
+def handle_b2c_age_missing_values(df: pd.DataFrame) -> pd.DataFrame:
+    result_df = df.copy()
+
+    if "b2c_age" not in result_df.columns or "client_type" not in result_df.columns:
+        return result_df
+
+    client_type = result_df["client_type"].astype(str).str.strip()
+
+    b2b_mask = client_type == "B2B"
+
+    result_df["b2c_age_not_applicable"] = b2b_mask.astype(int)
+
+    result_df.loc[b2b_mask, "b2c_age"] = 0
+
+    return result_df
+
+
 def extract_comm_time_features(df: pd.DataFrame) -> pd.DataFrame:
     result_df = df.copy()
 
@@ -99,6 +116,7 @@ def add_extended_features(df: pd.DataFrame) -> pd.DataFrame:
 def prepare_base_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     result_df = df.copy()
     result_df = convert_numeric_columns(result_df)
+    result_df = handle_b2c_age_missing_values(result_df)
     result_df = extract_comm_time_features(result_df)
     result_df = add_derived_features(result_df)
     result_df = add_extended_features(result_df)

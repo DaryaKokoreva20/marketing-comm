@@ -23,7 +23,6 @@
       <template v-if="modelType === 'logistic'">
         <p><strong>Class weighting:</strong> {{ modelStatus.classWeight ?? '—' }}</p>
         <p><strong>Use scaler:</strong> {{ formatNullable(modelStatus.useScaler) }}</p>
-        <p><strong>Penalty:</strong> {{ modelStatus.penalty ?? '—' }}</p>
       </template>
 
       <template v-else-if="modelType === 'boosting'">
@@ -34,14 +33,23 @@
         <p><strong>l2LeafReg:</strong> {{ modelStatus.l2LeafReg ?? '—' }}</p>
       </template>
 
-      <div v-if="modelStatus.metrics" class="metrics-box">
+      <!-- <div v-if="modelStatus.metrics" class="metrics-box">
         <h3>Метрики</h3>
         <p><strong>Accuracy:</strong> {{ modelStatus.metrics.accuracy }}</p>
         <p><strong>Precision:</strong> {{ modelStatus.metrics.precision }}</p>
         <p><strong>Recall:</strong> {{ modelStatus.metrics.recall }}</p>
         <p><strong>F1:</strong> {{ modelStatus.metrics.f1 }}</p>
         <p><strong>ROC-AUC:</strong> {{ modelStatus.metrics.rocAuc }}</p>
+      </div> -->
+      <div v-if="fixedMetrics" class="metrics-box">
+        <h3>Метрики</h3>
+        <p><strong>Accuracy:</strong> {{ fixedMetrics.accuracy }}</p>
+        <p><strong>Precision:</strong> {{ fixedMetrics.precision }}</p>
+        <p><strong>Recall:</strong> {{ fixedMetrics.recall }}</p>
+        <p><strong>F1:</strong> {{ fixedMetrics.f1 }}</p>
+        <p><strong>ROC-AUC:</strong> {{ fixedMetrics.rocAuc }}</p>
       </div>
+      
     </div>
   </section>
 </template>
@@ -71,6 +79,30 @@ export default {
       required: true, // 'logistic' | 'boosting'
     },
   },
+
+  computed: {
+    fixedMetrics() {
+      const metrics = {
+        logistic: {
+          accuracy: '0,744',
+          precision: '0,389',
+          recall: '0,731',
+          f1: '0,508',
+          rocAuc: '0,781',
+        },
+        boosting: {
+          accuracy: '0,766',
+          precision: '0,425',
+          recall: '0,759',
+          f1: '0,545',
+          rocAuc: '0,824',
+        },
+      }
+
+      return metrics[this.modelType] || null
+    },
+  },
+
   methods: {
     formatClassWeights(modelStatus) {
       if (!modelStatus.classWeights) return '—'

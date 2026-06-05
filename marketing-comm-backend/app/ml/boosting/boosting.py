@@ -5,9 +5,13 @@ from sklearn.model_selection import train_test_split
 from app.core.paths import BOOSTING_MODEL_PATH
 from ..config import (
     BOOSTING_SEARCH_CONFIG,
-    TRAIN_TEST_SPLIT_CONFIG,
+    DATA_SPLIT_CONFIG,
 )
-from ..evaluation import select_best_threshold, is_better_result
+from ..evaluation import (
+    select_best_threshold,
+    is_better_result,
+    calculate_metrics_for_threshold,
+)
 from ..search import generate_param_combinations
 from ..serialization import serialize_class_weights
 from .custom_gradient_boosting import CustomGradientBoostingClassifier
@@ -15,15 +19,32 @@ from .custom_boosting_pipeline import CustomBoostingPipeline
 
 
 def train_boosting_model(X: pd.DataFrame, y: pd.Series) -> dict:
-    split_config = TRAIN_TEST_SPLIT_CONFIG.copy()
-    stratify_value = y if split_config.get("stratify", False) else None
+    split_config = DATA_SPLIT_CONFIG.copy()
+    use_stratify = split_config.get("stratify", False)
 
-    X_train, X_test, y_train, y_test = train_test_split(
+    stratify_value = y if use_stratify else None
+
+    X_train_valid, X_test, y_train_valid, y_test = train_test_split(
         X,
         y,
         test_size=split_config["test_size"],
         random_state=split_config["random_state"],
         stratify=stratify_value,
+    )
+
+    validation_size = split_config["validation_size"]
+    test_size = split_config["test_size"]
+
+    validation_size_from_train_valid = validation_size / (1 - test_size)
+
+    train_valid_stratify_value = y_train_valid if use_stratify else None
+
+    X_train, X_valid, y_train, y_valid = train_test_split(
+        X_train_valid,
+        y_train_valid,
+        test_size=validation_size_from_train_valid,
+        random_state=split_config["random_state"],
+        stratify=train_valid_stratify_value,
     )
 
     param_combinations = generate_boosting_param_combinations()
@@ -33,14 +54,27 @@ def train_boosting_model(X: pd.DataFrame, y: pd.Series) -> dict:
     for params in param_combinations:
         candidate = train_single_boosting_model(
             X_train=X_train,
-            X_test=X_test,
+            X_valid=X_valid,
             y_train=y_train,
-            y_test=y_test,
+            y_valid=y_valid,
             params=params,
         )
 
         if is_better_result(candidate, best_result):
             best_result = candidate
+
+    print("Best boosting validation metrics:")
+    print(best_result["metrics"])
+    print("Best boosting threshold:")
+    print(best_result["threshold"])
+
+    y_test_proba = best_result["model"].predict_proba(X_test)[:, 1]
+
+    test_metrics = calculate_metrics_for_threshold(
+        y_true=y_test,
+        y_proba=y_test_proba,
+        threshold=best_result["threshold"],
+    )
 
     save_boosting_model(best_result["model"])
 
@@ -53,7 +87,7 @@ def train_boosting_model(X: pd.DataFrame, y: pd.Series) -> dict:
         "depth": best_result["depth"],
         "l2LeafReg": best_result["l2LeafReg"],
         "mergeRareCategories": best_result["mergeRareCategories"],
-        "metrics": best_result["metrics"],
+        "metrics": test_metrics,
     }
 
 
@@ -84,16 +118,20 @@ def generate_boosting_param_combinations() -> list[dict]:
 
 def train_single_boosting_model(
     X_train: pd.DataFrame,
-    X_test: pd.DataFrame,
+    X_valid: pd.DataFrame,
     y_train: pd.Series,
-    y_test: pd.Series,
+    y_valid: pd.Series,
     params: dict,
 ) -> dict:
     pipeline = build_gradient_boosting_pipeline(params)
     pipeline.fit(X_train, y_train)
 
-    y_proba = pipeline.predict_proba(X_test)[:, 1]
-    best_threshold, best_metrics = select_best_threshold(y_test, y_proba)
+    y_valid_proba = pipeline.predict_proba(X_valid)[:, 1]
+
+    best_threshold, validation_metrics = select_best_threshold(
+        y_true=y_valid,
+        y_proba=y_valid_proba,
+    )
 
     return {
         "model": pipeline,
@@ -105,7 +143,7 @@ def train_single_boosting_model(
         "depth": params["depth"],
         "l2LeafReg": params["l2_leaf_reg"],
         "mergeRareCategories": params["merge_rare_categories"],
-        "metrics": best_metrics,
+        "metrics": validation_metrics,
     }
 
 

@@ -4,12 +4,16 @@ from sklearn.model_selection import train_test_split
 
 from app.core.paths import LOGISTIC_MODEL_PATH
 from ..config import (
-    TRAIN_TEST_SPLIT_CONFIG,
+    DATA_SPLIT_CONFIG,
     LOGISTIC_SEARCH_CONFIG,
 )
 from .custom_logistic import CustomLogisticRegression
 from .custom_logistic_pipeline import CustomLogisticPipeline
-from ..evaluation import select_best_threshold, is_better_result
+from ..evaluation import (
+    select_best_threshold,
+    is_better_result,
+    calculate_metrics_for_threshold,
+)
 from ..search import generate_param_combinations
 from ..serialization import serialize_class_weight
 
@@ -68,35 +72,56 @@ def extract_logistic_model_summary(result: dict) -> dict:
 
 def train_single_logistic_regression_model(
     X_train: pd.DataFrame,
-    X_test: pd.DataFrame,
+    X_valid: pd.DataFrame,
     y_train: pd.Series,
-    y_test: pd.Series,
+    y_valid: pd.Series,
     params: dict,
 ) -> dict:
     pipeline = build_logistic_regression_pipeline(params)
     pipeline.fit(X_train, y_train)
 
-    y_proba = pipeline.predict_proba(X_test)[:, 1]
-    best_threshold, best_metrics = select_best_threshold(y_test, y_proba)
+    y_valid_proba = pipeline.predict_proba(X_valid)[:, 1]
+
+    best_threshold, validation_metrics = select_best_threshold(
+        y_true=y_valid,
+        y_proba=y_valid_proba,
+    )
 
     return build_logistic_training_result(
         pipeline=pipeline,
         params=params,
         threshold=best_threshold,
-        metrics=best_metrics,
+        metrics=validation_metrics,
     )
 
 
 def train_logistic_regression_model(X: pd.DataFrame, y: pd.Series) -> dict:
-    split_config = TRAIN_TEST_SPLIT_CONFIG.copy()
-    stratify_value = y if split_config.get("stratify", False) else None
+    split_config = DATA_SPLIT_CONFIG.copy()
+    use_stratify = split_config.get("stratify", False)
 
-    X_train, X_test, y_train, y_test = train_test_split(
+    stratify_value = y if use_stratify else None
+
+    X_train_valid, X_test, y_train_valid, y_test = train_test_split(
         X,
         y,
         test_size=split_config["test_size"],
         random_state=split_config["random_state"],
         stratify=stratify_value,
+    )
+
+    validation_size = split_config["validation_size"]
+    test_size = split_config["test_size"]
+
+    validation_size_from_train_valid = validation_size / (1 - test_size)
+
+    train_valid_stratify_value = y_train_valid if use_stratify else None
+
+    X_train, X_valid, y_train, y_valid = train_test_split(
+        X_train_valid,
+        y_train_valid,
+        test_size=validation_size_from_train_valid,
+        random_state=split_config["random_state"],
+        stratify=train_valid_stratify_value,
     )
 
     param_combinations = generate_logistic_param_combinations()
@@ -106,14 +131,29 @@ def train_logistic_regression_model(X: pd.DataFrame, y: pd.Series) -> dict:
     for params in param_combinations:
         candidate = train_single_logistic_regression_model(
             X_train=X_train,
-            X_test=X_test,
+            X_valid=X_valid,
             y_train=y_train,
-            y_test=y_test,
+            y_valid=y_valid,
             params=params,
         )
 
         if is_better_result(candidate, best_result):
             best_result = candidate
+
+    print("Best logistic regression validation metrics:")
+    print(best_result["metrics"])
+    print("Best logistic regression threshold:")
+    print(best_result["threshold"])
+
+    y_test_proba = best_result["pipeline"].predict_proba(X_test)[:, 1]
+
+    test_metrics = calculate_metrics_for_threshold(
+        y_true=y_test,
+        y_proba=y_test_proba,
+        threshold=best_result["threshold"],
+    )
+
+    best_result["metrics"] = test_metrics
 
     save_logistic_model(best_result["pipeline"])
 

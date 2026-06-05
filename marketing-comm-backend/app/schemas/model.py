@@ -23,7 +23,7 @@ class BaseModelStatusDataSchema(BaseModel):
 class LogisticModelStatusDataSchema(BaseModelStatusDataSchema):
     classWeight: Optional[str] = None
     useScaler: Optional[bool] = None
-    penalty: Optional[str] = None
+    l2Lambda: Optional[float] = None
     mergeRareCategories: bool | None = None
 
 

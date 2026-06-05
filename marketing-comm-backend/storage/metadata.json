@@ -2,46 +2,46 @@
   "logistic": {
     "trained": true,
     "algorithm": "Custom Logistic Regression",
-    "trainedAt": "2026-04-22 11:49:51",
-    "rowsCount": 2000,
-    "featuresCount": 29,
-    "threshold": 0.5,
-    "classWeight": "0:1, 1:3",
+    "trainedAt": "2026-06-05 19:10:13",
+    "rowsCount": 357,
+    "featuresCount": 30,
+    "threshold": 0.4,
+    "classWeight": "0:1, 1:5",
     "useScaler": true,
-    "learningRate": 0.01,
-    "maxIter": 5000,
-    "l2Lambda": 0.0,
+    "learningRate": 0.03,
+    "maxIter": 1000,
+    "l2Lambda": 0.01,
     "tolerance": 1e-06,
-    "mergeRareCategories": false,
+    "mergeRareCategories": true,
     "metrics": {
-      "accuracy": 0.63,
-      "precision": 0.3833,
-      "recall": 0.6509,
-      "f1": 0.4825,
-      "rocAuc": 0.6666
+      "accuracy": 0.7222,
+      "precision": 0.3333,
+      "recall": 0.6667,
+      "f1": 0.4444,
+      "rocAuc": 0.7597
     }
   },
   "boosting": {
     "trained": true,
     "algorithm": "Custom Gradient Boosting",
-    "trainedAt": "2026-04-22 13:01:21",
-    "rowsCount": 2000,
-    "featuresCount": 27,
-    "threshold": 0.45,
+    "trainedAt": "2026-06-05 19:33:49",
+    "rowsCount": 357,
+    "featuresCount": 28,
+    "threshold": 0.4,
     "classWeights": [
       1,
-      3
+      5
     ],
-    "iterations": 800,
-    "learningRate": 0.01,
+    "iterations": 500,
+    "learningRate": 0.03,
     "depth": 4,
     "l2LeafReg": 3,
     "metrics": {
-      "accuracy": 0.5725,
-      "precision": 0.343,
-      "recall": 0.6698,
-      "f1": 0.4537,
-      "rocAuc": 0.6367
+      "accuracy": 0.7222,
+      "precision": 0.25,
+      "recall": 0.3333,
+      "f1": 0.2857,
+      "rocAuc": 0.6167
     }
   }
 }

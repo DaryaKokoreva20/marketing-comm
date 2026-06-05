@@ -1,14 +1,15 @@
-THRESHOLD_CANDIDATES = [0.35, 0.4, 0.45, 0.50, 0.55]
+THRESHOLD_CANDIDATES = [0.40] # [0.35, 0.4, 0.45, 0.50, 0.55]
 
 MODEL_SELECTION_CONFIG = {
-    "min_precision": 0.4,
+    "min_precision": 0.35,
     "min_recall": 0.4,
     "primary_metric": "f1",
     "secondary_metric": "recall",
 }
 
-TRAIN_TEST_SPLIT_CONFIG = {
+DATA_SPLIT_CONFIG = {
     "test_size": 0.2,
+    "validation_size": 0.2,
     "random_state": 42,
     "stratify": True,
 }
@@ -16,37 +17,36 @@ TRAIN_TEST_SPLIT_CONFIG = {
 ONE_HOT_CONFIG = {
     "rare_category_columns": ["industry_category", "channel_scenario"],
     "min_frequency": 10,
+    "drop_first": True,
 }
 
 LOGISTIC_SEARCH_CONFIG = {
     "params": {
         "class_weight": [
-            None,
-            {0: 1, 1: 3},
             {0: 1, 1: 5},
-        ],
-        "use_scaler": [False, True],
-        "learning_rate": [0.01, 0.05],
-        "max_iter": [1000, 3000, 5000],
-        "l2_lambda": [0.0, 0.01, 0.1],
+        ], # None, {0: 1, 1: 3}, {0: 1, 1: 5},
+        "use_scaler": [True], # [False, True]
+        "learning_rate": [0.03], # [0.01, 0.03, 0.05],
+        "max_iter": [1000], # [500, 1000, 3000, 5000]
+        "l2_lambda": [0.01], # [0.0, 0.01, 0.1]
         "tolerance": [1e-6],
-        "merge_rare_categories": [False, True]
+        "merge_rare_categories": [True] # [False, True]
     }
 }
 
 BOOSTING_SEARCH_CONFIG = {
     "enabled": True,
     "class_weights": [
-        [1, 3],
+        [1, 5],
         # [1, 5],
         # [1, 7],
     ],
     "params": {
-        "iterations": [800], # [500, 800, 1200],
-        "learning_rate": [0.01], # 0.03
+        "iterations": [500], # [500, 800, 1200],
+        "learning_rate": [0.03], # 0.01
         "depth": [4], # 5
         "l2_leaf_reg": [3], # 5, 7
-        "merge_rare_categories": [False], # True
+        "merge_rare_categories": [True], # False
     },
 }
 
@@ -115,6 +115,7 @@ BOOSTING_FEATURES = [
     "prev_comm_response_rate_scenario",
     "promo_sensitivity",
     "b2c_age",
+    "b2c_age_not_applicable",
     "comm_time_sin",
     "comm_time_cos",
     "orders_per_30_days",

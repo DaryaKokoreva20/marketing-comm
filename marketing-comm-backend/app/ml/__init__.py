@@ -5,6 +5,6 @@ from .logistic.logistic import (
 )
 
 from .boosting.boosting import (
-    train_cboosting_model,
+    train_boosting_model,
     predict_boosting_probabilities,
 )
